@@ -10,6 +10,7 @@ import (
 )
 
 type StockUsecase interface {
+	PreviewStocks(ctx context.Context, file io.Reader) ([]models.Stock, error)
 	UploadStocks(ctx context.Context, file io.Reader) ([]models.Stock, error)
 }
 
@@ -25,13 +26,16 @@ func NewStockUsecase(repo repositories.StockRepository, service services.StockSe
 	}
 }
 
+func (u *stockUsecase) PreviewStocks(ctx context.Context, file io.Reader) ([]models.Stock, error) {
+	return u.service.ParseExcel(file)
+}
+
 func (u *stockUsecase) UploadStocks(ctx context.Context, file io.Reader) ([]models.Stock, error) {
 	stocks, err := u.service.ParseExcel(file)
 	if err != nil {
 		return nil, err
 	}
 
-	// Optional: Save to repository
 	err = u.repo.BatchInsertStocks(ctx, stocks)
 	if err != nil {
 		return nil, err

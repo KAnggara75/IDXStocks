@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"mime/multipart"
 	"path/filepath"
 	"strings"
 
@@ -19,29 +20,28 @@ func NewStockHandler(usecase usecases.StockUsecase) *StockHandler {
 	}
 }
 
-func (h *StockHandler) UploadHandler(c *fiber.Ctx) error {
-	file, err := c.FormFile("file")
+func (h *StockHandler) PreviewHandler(c *fiber.Ctx) error {
+	f, err := h.getFileAndValidate(c)
 	if err != nil {
-		logrus.Errorf("Failed to get file from form: %v", err)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "File is required",
-		})
+		return err
 	}
+	defer f.Close()
 
-	// Validate extension
-	ext := strings.ToLower(filepath.Ext(file.Filename))
-	if ext != ".xlsx" && ext != ".xls" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Only .xlsx and .xls files are allowed",
-		})
-	}
-
-	f, err := file.Open()
+	stocks, err := h.usecase.PreviewStocks(c.Context(), f)
 	if err != nil {
-		logrus.Errorf("Failed to open file: %v", err)
+		logrus.Errorf("Failed to preview stocks: %v", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to open file",
+			"error": err.Error(),
 		})
+	}
+
+	return c.JSON(stocks)
+}
+
+func (h *StockHandler) UploadHandler(c *fiber.Ctx) error {
+	f, err := h.getFileAndValidate(c)
+	if err != nil {
+		return err
 	}
 	defer f.Close()
 
@@ -54,4 +54,24 @@ func (h *StockHandler) UploadHandler(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(stocks)
+}
+
+func (h *StockHandler) getFileAndValidate(c *fiber.Ctx) (multipart.File, error) {
+	file, err := c.FormFile("file")
+	if err != nil {
+		logrus.Errorf("Failed to get file from form: %v", err)
+		return nil, c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "File is required",
+		})
+	}
+
+	// Validate extension
+	ext := strings.ToLower(filepath.Ext(file.Filename))
+	if ext != ".xlsx" && ext != ".xls" {
+		return nil, c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Only .xlsx and .xls files are allowed",
+		})
+	}
+
+	return file.Open()
 }

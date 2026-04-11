@@ -64,21 +64,30 @@ func parseIndoDate(dateStr string) string {
 		return ""
 	}
 
-	// Mapping Indonesian month abbreviations to numerical months
+	// Check if already in YYYY-MM-DD format
+	if len(dateStr) == 10 && dateStr[4] == '-' && dateStr[7] == '-' {
+		return dateStr
+	}
+
+	// Mapping Indonesian/English month abbreviations to numerical months
 	months := map[string]string{
 		"Jan": "01",
 		"Feb": "02",
 		"Mar": "03",
 		"Apr": "04",
 		"Mei": "05",
+		"May": "05",
 		"Jun": "06",
 		"Jul": "07",
 		"Agu": "08",
 		"Agt": "08",
+		"Aug": "08",
 		"Sep": "09",
 		"Okt": "10",
+		"Oct": "10",
 		"Nov": "11",
 		"Des": "12",
+		"Dec": "12",
 	}
 
 	parts := strings.Split(dateStr, " ")

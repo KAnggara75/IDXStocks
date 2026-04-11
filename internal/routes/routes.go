@@ -38,5 +38,6 @@ func Setup(app *fiber.App) {
 
 	// API V1 Routes
 	v1 := app.Group("/api/v1")
-	v1.Post("/stocks/upload", stockHandler.UploadHandler)
+	v1.Post("/stocks/upload", stockHandler.PreviewHandler)
+	v1.Patch("/stocks/upload", stockHandler.UploadHandler)
 }
