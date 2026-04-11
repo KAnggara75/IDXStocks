@@ -10,5 +10,16 @@ func InitLogger() {
 	// Set log environment
 	logrus.SetFormatter(&logrus.JSONFormatter{})
 	logrus.SetOutput(os.Stdout)
-	logrus.SetLevel(logrus.DebugLevel)
+
+	levelStr := os.Getenv("LOG_LEVEL")
+	if levelStr == "" {
+		levelStr = "debug"
+	}
+
+	level, err := logrus.ParseLevel(levelStr)
+	if err != nil {
+		level = logrus.InfoLevel
+	}
+
+	logrus.SetLevel(level)
 }
