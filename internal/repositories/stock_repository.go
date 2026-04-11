@@ -90,7 +90,7 @@ func (r *stockRepository) BatchInsertStocks(ctx context.Context, stocks []models
 
 func (r *stockRepository) UpdateStockIDs(ctx context.Context, data []models.PasardanaStock) ([]models.StockResponse, error) {
 	if len(data) == 0 {
-		return nil, nil
+		return make([]models.StockResponse, 0), nil
 	}
 
 	tx, err := r.pool.Begin(ctx)
@@ -114,7 +114,7 @@ func (r *stockRepository) UpdateStockIDs(ctx context.Context, data []models.Pasa
 	br := tx.SendBatch(ctx, batch)
 	defer br.Close()
 
-	var updatedStocks []models.StockResponse
+	updatedStocks := make([]models.StockResponse, 0)
 	for i := 0; i < len(data); i++ {
 		rows, err := br.Query()
 		if err != nil {
