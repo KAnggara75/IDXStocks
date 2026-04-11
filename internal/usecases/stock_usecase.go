@@ -12,6 +12,7 @@ import (
 type StockUsecase interface {
 	PreviewStocks(ctx context.Context, file io.Reader) ([]models.Stock, error)
 	UploadStocks(ctx context.Context, file io.Reader) ([]models.Stock, error)
+	SyncStockIDs(ctx context.Context) ([]models.StockResponse, error)
 }
 
 type stockUsecase struct {
@@ -42,4 +43,13 @@ func (u *stockUsecase) UploadStocks(ctx context.Context, file io.Reader) ([]mode
 	}
 
 	return stocks, nil
+}
+
+func (u *stockUsecase) SyncStockIDs(ctx context.Context) ([]models.StockResponse, error) {
+	pasardanaStocks, err := u.service.FetchPasardanaStockIDs()
+	if err != nil {
+		return nil, err
+	}
+
+	return u.repo.UpdateStockIDs(ctx, pasardanaStocks)
 }

@@ -12,6 +12,7 @@ import (
 
 type StockRepository interface {
 	BatchInsertStocks(ctx context.Context, stocks []models.Stock) error
+	UpdateStockIDs(ctx context.Context, data []models.PasardanaStock) ([]models.StockResponse, error)
 }
 
 type stockRepository struct {
@@ -62,7 +63,7 @@ func (r *stockRepository) BatchInsertStocks(ctx context.Context, stocks []models
 	defer br.Close()
 
 	var changedCount int64
-	for i := 0; i < len(stocks); i++ {
+	for i := range stocks {
 		cmdTag, err := br.Exec()
 		if err != nil {
 			return fmt.Errorf("failed to execute batch statement %d: %w", i, err)
@@ -85,4 +86,59 @@ func (r *stockRepository) BatchInsertStocks(ctx context.Context, stocks []models
 	logrus.Debugf("Successfully processed %d stocks, %d records updated/inserted", len(stocks), changedCount)
 
 	return nil
+}
+
+func (r *stockRepository) UpdateStockIDs(ctx context.Context, data []models.PasardanaStock) ([]models.StockResponse, error) {
+	if len(data) == 0 {
+		return nil, nil
+	}
+
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	query := `
+		UPDATE idxstock.stocks
+		SET id = $1, last_modified = now()
+		WHERE code = $2 AND (id IS NULL OR id != $1)
+		RETURNING id, code, name
+	`
+
+	batch := &pgx.Batch{}
+	for _, s := range data {
+		batch.Queue(query, s.Id, s.Code)
+	}
+
+	br := tx.SendBatch(ctx, batch)
+	defer br.Close()
+
+	var updatedStocks []models.StockResponse
+	for i := 0; i < len(data); i++ {
+		rows, err := br.Query()
+		if err != nil {
+			return nil, fmt.Errorf("failed to execute batch query %d: %w", i, err)
+		}
+		
+		for rows.Next() {
+			var sr models.StockResponse
+			if err := rows.Scan(&sr.Id, &sr.Code, &sr.Name); err == nil {
+				updatedStocks = append(updatedStocks, sr)
+			}
+		}
+		rows.Close()
+	}
+
+	if err := br.Close(); err != nil {
+		return nil, fmt.Errorf("failed to close batch result: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	logrus.Debugf("Successfully updated %d stock IDs", len(updatedStocks))
+
+	return updatedStocks, nil
 }
