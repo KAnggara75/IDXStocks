@@ -3,9 +3,19 @@ package routes
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/KAnggara75/IDXStocks/internal/database"
+	"github.com/KAnggara75/IDXStocks/internal/handlers"
+	"github.com/KAnggara75/IDXStocks/internal/repositories"
+	"github.com/KAnggara75/IDXStocks/internal/services"
+	"github.com/KAnggara75/IDXStocks/internal/usecases"
 )
 
 func Setup(app *fiber.App) {
+	// Dependency Injection
+	stockRepo := repositories.NewStockRepository()
+	stockService := services.NewStockService()
+	stockUsecase := usecases.NewStockUsecase(stockRepo, stockService)
+	stockHandler := handlers.NewStockHandler(stockUsecase)
+
 	app.Get("/ping", func(c *fiber.Ctx) error {
 		err := database.Pool.Ping(c.Context())
 		if err != nil {
@@ -25,4 +35,8 @@ func Setup(app *fiber.App) {
 			"status": "up",
 		})
 	})
+
+	// API V1 Routes
+	v1 := app.Group("/api/v1")
+	v1.Post("/stocks/upload", stockHandler.UploadHandler)
 }
