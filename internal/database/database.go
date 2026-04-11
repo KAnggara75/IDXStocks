@@ -43,13 +43,32 @@ func Connect() {
 func Migrate() {
 	ctx := context.Background()
 
-	// Ensure schema exists
-	_, err := Pool.Exec(ctx, "CREATE SCHEMA IF NOT EXISTS idxstock")
+	// 1. Check if the table idxstock.stocks already exists
+	var tableExists bool
+	checkQuery := `
+		SELECT EXISTS (
+			SELECT FROM information_schema.tables 
+			WHERE  table_schema = 'idxstock'
+			AND    table_name   = 'stocks'
+		);
+	`
+	err := Pool.QueryRow(ctx, checkQuery).Scan(&tableExists)
+	if err != nil {
+		logrus.Errorf("Failed to check if table exists: %v", err)
+	}
+
+	if tableExists {
+		logrus.Info("Table idxstock.stocks already exists, skipping migrations")
+		return
+	}
+
+	// 2. Ensure schema exists
+	_, err = Pool.Exec(ctx, "CREATE SCHEMA IF NOT EXISTS idxstock")
 	if err != nil {
 		logrus.Fatalf("Failed to create schema idxstock: %v", err)
 	}
 
-	// Get migration files
+	// 3. Get migration files
 	files, err := filepath.Glob("migrations/*.sql")
 	if err != nil {
 		logrus.Fatalf("Failed to read migrations directory: %v", err)
