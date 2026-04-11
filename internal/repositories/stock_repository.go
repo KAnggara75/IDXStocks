@@ -7,6 +7,7 @@ import (
 	"github.com/KAnggara75/IDXStocks/internal/models"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/sirupsen/logrus"
 )
 
 type StockRepository interface {
@@ -48,6 +49,7 @@ func (r *stockRepository) BatchInsertStocks(ctx context.Context, stocks []models
 
 	batch := &pgx.Batch{}
 	for _, s := range stocks {
+		logrus.Debugf("Queuing upsert for stock: %s (%s)", s.Code, s.CompanyName)
 		batch.Queue(query, s.Code, s.CompanyName, s.ListingDate, s.DelistingDate, s.Shares, s.ListingBoard)
 	}
 
@@ -59,6 +61,8 @@ func (r *stockRepository) BatchInsertStocks(ctx context.Context, stocks []models
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
+
+	logrus.Debugf("Successfully upserted %d stocks to database", len(stocks))
 
 	return nil
 }
