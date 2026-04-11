@@ -20,4 +20,4 @@ CREATE INDEX IF NOT EXISTS idx_stocks_name_like ON idxstock.stocks (name text_pa
 CREATE INDEX IF NOT EXISTS idx_stocks_board ON idxstock.stocks (board);
 
 alter table idxstock.stocks
-    owner to kanggara;
+    owner to pakaiwa_app;

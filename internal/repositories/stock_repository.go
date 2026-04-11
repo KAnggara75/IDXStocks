@@ -36,7 +36,7 @@ func (r *stockRepository) BatchInsertStocks(ctx context.Context, stocks []models
 
 	query := `
 		INSERT INTO idxstock.stocks (code, name, listing_date, delisting_date, shares, board)
-		VALUES ($1, $2, $3, NULLIF($4, ''), $5, $6)
+		VALUES ($1, $2, $3::DATE, NULLIF($4, '')::DATE, $5, $6)
 		ON CONFLICT (code) DO UPDATE SET
 			name = EXCLUDED.name,
 			listing_date = EXCLUDED.listing_date,
