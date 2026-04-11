@@ -11,7 +11,7 @@ import (
 
 func Setup(app *fiber.App) {
 	// Dependency Injection
-	stockRepo := repositories.NewStockRepository()
+	stockRepo := repositories.NewStockRepository(database.Pool)
 	stockService := services.NewStockService()
 	stockUsecase := usecases.NewStockUsecase(stockRepo, stockService)
 	stockHandler := handlers.NewStockHandler(stockUsecase)
