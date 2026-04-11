@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 
 	"github.com/KAnggara75/IDXStocks/internal/models"
 	"github.com/xuri/excelize/v2"
@@ -40,14 +41,16 @@ func (s *stockService) ParseExcel(file io.Reader) ([]models.Stock, error) {
 			continue
 		}
 
-		shares, _ := strconv.ParseInt(row[5], 10, 64)
+		// Handle comma separators in shares (e.g., 11,766,313,488)
+		sharesStr := strings.ReplaceAll(row[4], ",", "")
+		shares, _ := strconv.ParseInt(sharesStr, 10, 64)
 
 		stock := models.Stock{
-			Code:          row[0],
-			CompanyName:   row[1],
-			ListingDate:   row[2],
-			DelistingDate: row[3],
-			ListingBoard:  row[4],
+			Code:          row[1],
+			CompanyName:   row[2],
+			ListingDate:   row[3],
+			DelistingDate: "",
+			ListingBoard:  row[5],
 			Shares:        shares,
 		}
 		stocks = append(stocks, stock)
