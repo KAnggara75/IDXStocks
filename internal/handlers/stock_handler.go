@@ -93,3 +93,15 @@ func (h *StockHandler) SyncIDHandler(c *fiber.Ctx) error {
 
 	return c.JSON(stocks)
 }
+
+func (h *StockHandler) IndustrySyncHandler(c *fiber.Ctx) error {
+	results, err := h.usecase.SyncIndustry(c.Context())
+	if err != nil {
+		logrus.Errorf("Failed to sync industries: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return c.JSON(results)
+}

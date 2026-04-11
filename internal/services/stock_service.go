@@ -15,6 +15,7 @@ import (
 type StockService interface {
 	ParseExcel(file io.Reader) ([]models.Stock, error)
 	FetchPasardanaStockIDs() ([]models.PasardanaStock, error)
+	FetchPasardanaStockSearchResult() ([]models.PasardanaSearchResult, error)
 }
 
 type stockService struct{}
@@ -132,4 +133,24 @@ func (s *stockService) FetchPasardanaStockIDs() ([]models.PasardanaStock, error)
 	}
 
 	return pasardanaStocks, nil
+}
+func (s *stockService) FetchPasardanaStockSearchResult() ([]models.PasardanaSearchResult, error) {
+	url := "https://www.pasardana.id/api/StockSearchResult/GetAll"
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch from pasardana API: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("pasardana API returned status: %d", resp.StatusCode)
+	}
+
+	var pasardanaResults []models.PasardanaSearchResult
+	if err := json.NewDecoder(resp.Body).Decode(&pasardanaResults); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return pasardanaResults, nil
 }
