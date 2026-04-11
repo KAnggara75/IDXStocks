@@ -17,20 +17,23 @@ type StockUsecase interface {
 }
 
 type stockUsecase struct {
-	repo       repositories.StockRepository
-	sectorRepo repositories.SectorRepository
-	service    services.StockService
+	repo             repositories.StockRepository
+	sectorRepo       repositories.SectorRepository
+	service          services.StockService
+	pasardanaService services.PasardanaService
 }
 
 func NewStockUsecase(
 	repo repositories.StockRepository,
 	sectorRepo repositories.SectorRepository,
 	service services.StockService,
+	pasardanaService services.PasardanaService,
 ) StockUsecase {
 	return &stockUsecase{
-		repo:       repo,
-		sectorRepo: sectorRepo,
-		service:    service,
+		repo:             repo,
+		sectorRepo:       sectorRepo,
+		service:          service,
+		pasardanaService: pasardanaService,
 	}
 }
 
@@ -53,7 +56,7 @@ func (u *stockUsecase) UploadStocks(ctx context.Context, file io.Reader) ([]mode
 }
 
 func (u *stockUsecase) SyncStockIDs(ctx context.Context) ([]models.StockResponse, error) {
-	pasardanaStocks, err := u.service.FetchPasardanaStockIDs()
+	pasardanaStocks, err := u.pasardanaService.FetchStockIDs()
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +65,7 @@ func (u *stockUsecase) SyncStockIDs(ctx context.Context) ([]models.StockResponse
 }
 
 func (u *stockUsecase) SyncSectors(ctx context.Context) ([]models.SectorResponse, error) {
-	pasardanaSectors, err := u.service.FetchPasardanaSectors()
+	pasardanaSectors, err := u.pasardanaService.FetchSectors()
 	if err != nil {
 		return nil, err
 	}

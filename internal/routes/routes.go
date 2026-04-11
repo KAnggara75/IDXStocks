@@ -15,9 +15,10 @@ func Setup(app *fiber.App) {
 	sectorRepo := repositories.NewSectorRepository(database.Pool)
 	industryRepo := repositories.NewIndustryRepository(database.Pool)
 	stockService := services.NewStockService()
+	pasardanaService := services.NewPasardanaService()
 
-	stockUsecase := usecases.NewStockUsecase(stockRepo, sectorRepo, stockService)
-	industryUsecase := usecases.NewIndustryUsecase(industryRepo, stockService)
+	stockUsecase := usecases.NewStockUsecase(stockRepo, sectorRepo, stockService, pasardanaService)
+	industryUsecase := usecases.NewIndustryUsecase(industryRepo, pasardanaService)
 
 	stockHandler := handlers.NewStockHandler(stockUsecase)
 	industryHandler := handlers.NewIndustryHandler(industryUsecase)

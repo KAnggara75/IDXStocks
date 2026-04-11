@@ -13,19 +13,19 @@ type IndustryUsecase interface {
 }
 
 type industryUsecase struct {
-	repo    repositories.IndustryRepository
-	service services.StockService
+	repo             repositories.IndustryRepository
+	pasardanaService services.PasardanaService
 }
 
-func NewIndustryUsecase(repo repositories.IndustryRepository, service services.StockService) IndustryUsecase {
+func NewIndustryUsecase(repo repositories.IndustryRepository, pasardanaService services.PasardanaService) IndustryUsecase {
 	return &industryUsecase{
-		repo:    repo,
-		service: service,
+		repo:             repo,
+		pasardanaService: pasardanaService,
 	}
 }
 
 func (u *industryUsecase) SyncIndustry(ctx context.Context) (*models.IndustrySyncResponse, error) {
-	results, err := u.service.FetchPasardanaStockSearchResult()
+	results, err := u.pasardanaService.FetchStockSearchResult()
 	if err != nil {
 		return nil, err
 	}
