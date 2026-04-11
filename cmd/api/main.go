@@ -9,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/KAnggara75/IDXStocks/internal/config"
+	"github.com/KAnggara75/IDXStocks/internal/database"
 	"github.com/KAnggara75/IDXStocks/internal/routes"
 )
 
@@ -19,7 +20,7 @@ func main() {
 	// 2. Initialize Database
 	// For local testing, you might need to export DATABASE_URL
 	// e.g., export DATABASE_URL=postgres://user:pass@localhost:5432/dbname
-	// database.Connect()
+	database.Connect()
 
 	// 3. Initialize Fiber App
 	app := fiber.New(fiber.Config{
