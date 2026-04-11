@@ -7,10 +7,12 @@ import (
 	"github.com/KAnggara75/IDXStocks/internal/models"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/sirupsen/logrus"
 )
 
 type StockRepository interface {
 	BatchInsertStocks(ctx context.Context, stocks []models.Stock) error
+	UpdateStockIDs(ctx context.Context, data []models.PasardanaStock) ([]models.StockResponse, error)
 }
 
 type stockRepository struct {
@@ -44,6 +46,12 @@ func (r *stockRepository) BatchInsertStocks(ctx context.Context, stocks []models
 			shares = EXCLUDED.shares,
 			board = EXCLUDED.board,
 			last_modified = now()
+		WHERE
+			stocks.name IS DISTINCT FROM EXCLUDED.name OR
+			stocks.listing_date IS DISTINCT FROM EXCLUDED.listing_date OR
+			stocks.delisting_date IS DISTINCT FROM EXCLUDED.delisting_date OR
+			stocks.shares IS DISTINCT FROM EXCLUDED.shares OR
+			stocks.board IS DISTINCT FROM EXCLUDED.board
 	`
 
 	batch := &pgx.Batch{}
@@ -52,13 +60,85 @@ func (r *stockRepository) BatchInsertStocks(ctx context.Context, stocks []models
 	}
 
 	br := tx.SendBatch(ctx, batch)
+	defer br.Close()
+
+	var changedCount int64
+	for i := range stocks {
+		cmdTag, err := br.Exec()
+		if err != nil {
+			return fmt.Errorf("failed to execute batch statement %d: %w", i, err)
+		}
+
+		if cmdTag.RowsAffected() > 0 {
+			changedCount++
+			logrus.Debugf("Data changed for stock: %s (%s)", stocks[i].Code, stocks[i].CompanyName)
+		}
+	}
+
 	if err := br.Close(); err != nil {
-		return fmt.Errorf("failed to execute batch: %w", err)
+		return fmt.Errorf("failed to close batch result: %w", err)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
+	logrus.Debugf("Successfully processed %d stocks, %d records updated/inserted", len(stocks), changedCount)
+
 	return nil
+}
+
+func (r *stockRepository) UpdateStockIDs(ctx context.Context, data []models.PasardanaStock) ([]models.StockResponse, error) {
+	if len(data) == 0 {
+		return make([]models.StockResponse, 0), nil
+	}
+
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	query := `
+		UPDATE idxstock.stocks
+		SET id = $1, last_modified = now()
+		WHERE code = $2 AND (id IS NULL OR id != $1)
+		RETURNING id, code, name
+	`
+
+	batch := &pgx.Batch{}
+	for _, s := range data {
+		batch.Queue(query, s.Id, s.Code)
+	}
+
+	br := tx.SendBatch(ctx, batch)
+	defer br.Close()
+
+	updatedStocks := make([]models.StockResponse, 0)
+	for i := range data {
+		rows, err := br.Query()
+		if err != nil {
+			return nil, fmt.Errorf("failed to execute batch query %d: %w", i, err)
+		}
+
+		for rows.Next() {
+			var sr models.StockResponse
+			if err := rows.Scan(&sr.Id, &sr.Code, &sr.Name); err == nil {
+				updatedStocks = append(updatedStocks, sr)
+			}
+		}
+		rows.Close()
+	}
+
+	if err := br.Close(); err != nil {
+		return nil, fmt.Errorf("failed to close batch result: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	logrus.Debugf("Successfully updated %d stock IDs", len(updatedStocks))
+
+	return updatedStocks, nil
 }

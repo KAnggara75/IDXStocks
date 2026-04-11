@@ -2,6 +2,7 @@ DROP TABLE IF EXISTS idxstock.stocks CASCADE;
 
 CREATE TABLE IF NOT EXISTS idxstock.stocks
 (
+    id             INT            NULL,
     code           VARCHAR(10)    NOT NULL,
     name           VARCHAR(200)   NOT NULL,
     listing_date   DATE           NOT NULL,

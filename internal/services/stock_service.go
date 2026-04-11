@@ -1,8 +1,10 @@
 package services
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -12,6 +14,7 @@ import (
 
 type StockService interface {
 	ParseExcel(file io.Reader) ([]models.Stock, error)
+	FetchPasardanaStockIDs() ([]models.PasardanaStock, error)
 }
 
 type stockService struct{}
@@ -64,21 +67,30 @@ func parseIndoDate(dateStr string) string {
 		return ""
 	}
 
-	// Mapping Indonesian month abbreviations to numerical months
+	// Check if already in YYYY-MM-DD format
+	if len(dateStr) == 10 && dateStr[4] == '-' && dateStr[7] == '-' {
+		return dateStr
+	}
+
+	// Mapping Indonesian/English month abbreviations to numerical months
 	months := map[string]string{
 		"Jan": "01",
 		"Feb": "02",
 		"Mar": "03",
 		"Apr": "04",
 		"Mei": "05",
+		"May": "05",
 		"Jun": "06",
 		"Jul": "07",
 		"Agu": "08",
 		"Agt": "08",
+		"Aug": "08",
 		"Sep": "09",
 		"Okt": "10",
+		"Oct": "10",
 		"Nov": "11",
 		"Des": "12",
+		"Dec": "12",
 	}
 
 	parts := strings.Split(dateStr, " ")
@@ -99,4 +111,25 @@ func parseIndoDate(dateStr string) string {
 	year := parts[2]
 
 	return fmt.Sprintf("%s-%s-%s", year, month, day)
+}
+
+func (s *stockService) FetchPasardanaStockIDs() ([]models.PasardanaStock, error) {
+	url := "https://www.pasardana.id/api/Stock/GetAllSimpleStocks?username=anonymous"
+	
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch from pasardana API: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("pasardana API returned status: %d", resp.StatusCode)
+	}
+
+	var pasardanaStocks []models.PasardanaStock
+	if err := json.NewDecoder(resp.Body).Decode(&pasardanaStocks); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return pasardanaStocks, nil
 }
