@@ -60,7 +60,7 @@ func Migrate() {
 		logrus.Fatalf("Failed to create migration tracking table: %v", err)
 	}
 
-	// 3. Handle transition from old skip logic: 
+	// 3. Handle transition from old skip logic:
 	// If stocks table exists but migrations haven't been tracked, mark 000 and 001 as applied
 	var stocksExists bool
 	Pool.QueryRow(ctx, "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'idxstock' AND table_name = 'stocks')").Scan(&stocksExists)
