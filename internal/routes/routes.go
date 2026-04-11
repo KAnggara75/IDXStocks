@@ -15,8 +15,12 @@ func Setup(app *fiber.App) {
 	sectorRepo := repositories.NewSectorRepository(database.Pool)
 	industryRepo := repositories.NewIndustryRepository(database.Pool)
 	stockService := services.NewStockService()
-	stockUsecase := usecases.NewStockUsecase(stockRepo, sectorRepo, industryRepo, stockService)
+
+	stockUsecase := usecases.NewStockUsecase(stockRepo, sectorRepo, stockService)
+	industryUsecase := usecases.NewIndustryUsecase(industryRepo, stockService)
+
 	stockHandler := handlers.NewStockHandler(stockUsecase)
+	industryHandler := handlers.NewIndustryHandler(industryUsecase)
 
 	app.Get("/ping", func(c *fiber.Ctx) error {
 		err := database.Pool.Ping(c.Context())
@@ -44,5 +48,5 @@ func Setup(app *fiber.App) {
 	v1.Patch("/stocks/upload", stockHandler.UploadHandler)
 	v1.Put("/stocks/id", stockHandler.SyncIDHandler)
 	v1.Put("/stocks/sync-sector", stockHandler.SyncSectorHandler)
-	v1.Put("/industry/sync", stockHandler.IndustrySyncHandler)
+	v1.Put("/industry/sync", industryHandler.IndustrySyncHandler)
 }
