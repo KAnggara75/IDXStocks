@@ -73,6 +73,7 @@ func parseIndoDate(dateStr string) string {
 		"Mei": "05",
 		"Jun": "06",
 		"Jul": "07",
+		"Agu": "08",
 		"Agt": "08",
 		"Sep": "09",
 		"Okt": "10",
