@@ -13,18 +13,26 @@ type StockUsecase interface {
 	PreviewStocks(ctx context.Context, file io.Reader) ([]models.Stock, error)
 	UploadStocks(ctx context.Context, file io.Reader) ([]models.Stock, error)
 	SyncStockIDs(ctx context.Context) ([]models.StockResponse, error)
+	SyncSectors(ctx context.Context) ([]models.SectorResponse, error)
 	SyncIndustry(ctx context.Context) (*models.IndustrySyncResponse, error)
 }
 
 type stockUsecase struct {
 	repo         repositories.StockRepository
+	sectorRepo   repositories.SectorRepository
 	industryRepo repositories.IndustryRepository
 	service      services.StockService
 }
 
-func NewStockUsecase(repo repositories.StockRepository, industryRepo repositories.IndustryRepository, service services.StockService) StockUsecase {
+func NewStockUsecase(
+	repo repositories.StockRepository,
+	sectorRepo repositories.SectorRepository,
+	industryRepo repositories.IndustryRepository,
+	service services.StockService,
+) StockUsecase {
 	return &stockUsecase{
 		repo:         repo,
+		sectorRepo:   sectorRepo,
 		industryRepo: industryRepo,
 		service:      service,
 	}
@@ -55,6 +63,15 @@ func (u *stockUsecase) SyncStockIDs(ctx context.Context) ([]models.StockResponse
 	}
 
 	return u.repo.UpdateStockIDs(ctx, pasardanaStocks)
+}
+
+func (u *stockUsecase) SyncSectors(ctx context.Context) ([]models.SectorResponse, error) {
+	pasardanaSectors, err := u.service.FetchPasardanaSectors()
+	if err != nil {
+		return nil, err
+	}
+
+	return u.sectorRepo.UpsertSectors(ctx, pasardanaSectors)
 }
 
 func (u *stockUsecase) SyncIndustry(ctx context.Context) (*models.IndustrySyncResponse, error) {

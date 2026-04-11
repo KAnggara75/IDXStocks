@@ -12,9 +12,10 @@ import (
 func Setup(app *fiber.App) {
 	// Dependency Injection
 	stockRepo := repositories.NewStockRepository(database.Pool)
+	sectorRepo := repositories.NewSectorRepository(database.Pool)
 	industryRepo := repositories.NewIndustryRepository(database.Pool)
 	stockService := services.NewStockService()
-	stockUsecase := usecases.NewStockUsecase(stockRepo, industryRepo, stockService)
+	stockUsecase := usecases.NewStockUsecase(stockRepo, sectorRepo, industryRepo, stockService)
 	stockHandler := handlers.NewStockHandler(stockUsecase)
 
 	app.Get("/ping", func(c *fiber.Ctx) error {
@@ -42,5 +43,6 @@ func Setup(app *fiber.App) {
 	v1.Post("/stocks/upload", stockHandler.PreviewHandler)
 	v1.Patch("/stocks/upload", stockHandler.UploadHandler)
 	v1.Put("/stocks/id", stockHandler.SyncIDHandler)
+	v1.Put("/stocks/sync-sector", stockHandler.SyncSectorHandler)
 	v1.Put("/industry/sync", stockHandler.IndustrySyncHandler)
 }
