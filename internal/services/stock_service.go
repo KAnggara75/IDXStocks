@@ -46,12 +46,11 @@ func (s *stockService) ParseExcel(file io.Reader) ([]models.Stock, error) {
 		shares, _ := strconv.ParseInt(sharesStr, 10, 64)
 
 		stock := models.Stock{
-			Code:          row[1],
-			CompanyName:   row[2],
-			ListingDate:   row[3],
-			DelistingDate: "",
-			ListingBoard:  row[5],
-			Shares:        shares,
+			Code:         row[1],
+			CompanyName:  row[2],
+			ListingDate:  row[3],
+			ListingBoard: row[5],
+			Shares:       shares,
 		}
 		stocks = append(stocks, stock)
 	}
