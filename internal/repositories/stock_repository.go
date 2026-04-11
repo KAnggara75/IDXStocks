@@ -115,12 +115,12 @@ func (r *stockRepository) UpdateStockIDs(ctx context.Context, data []models.Pasa
 	defer br.Close()
 
 	updatedStocks := make([]models.StockResponse, 0)
-	for i := 0; i < len(data); i++ {
+	for i := range data {
 		rows, err := br.Query()
 		if err != nil {
 			return nil, fmt.Errorf("failed to execute batch query %d: %w", i, err)
 		}
-		
+
 		for rows.Next() {
 			var sr models.StockResponse
 			if err := rows.Scan(&sr.Id, &sr.Code, &sr.Name); err == nil {
