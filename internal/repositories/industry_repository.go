@@ -42,6 +42,7 @@ func (r *industryRepository) UpsertIndustries(ctx context.Context, industries []
 		ON CONFLICT (id) DO UPDATE SET
 			name = EXCLUDED.name,
 			last_modified = now()
+		WHERE (idxstock.industry.name IS DISTINCT FROM EXCLUDED.name)
 		RETURNING id, name
 	`
 
@@ -94,6 +95,8 @@ func (r *industryRepository) UpsertSubIndustries(ctx context.Context, subIndustr
 			name = EXCLUDED.name,
 			industry_id = EXCLUDED.industry_id,
 			last_modified = now()
+		WHERE (idxstock.sub_industry.name IS DISTINCT FROM EXCLUDED.name OR
+		       idxstock.sub_industry.industry_id IS DISTINCT FROM EXCLUDED.industry_id)
 		RETURNING id, name
 	`
 

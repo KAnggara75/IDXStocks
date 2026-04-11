@@ -44,6 +44,10 @@ func (r *sectorRepository) UpsertSectors(ctx context.Context, sectors []models.P
 			name_en = EXCLUDED.name_en,
 			description = EXCLUDED.description,
 			last_modified = now()
+		WHERE (idxstock.sectors.code IS DISTINCT FROM EXCLUDED.code OR
+		       idxstock.sectors.name IS DISTINCT FROM EXCLUDED.name OR
+		       idxstock.sectors.name_en IS DISTINCT FROM EXCLUDED.name_en OR
+		       idxstock.sectors.description IS DISTINCT FROM EXCLUDED.description)
 		RETURNING code, name
 	`
 
