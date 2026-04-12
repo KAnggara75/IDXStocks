@@ -16,18 +16,6 @@ func NewSectorHandler(usecase usecases.SectorUsecase) *SectorHandler {
 	}
 }
 
-func (h *SectorHandler) SyncSectorHandler(c fiber.Ctx) error {
-	sectors, err := h.usecase.SyncSectors(c.Context())
-	if err != nil {
-		logrus.Errorf("Failed to sync sectors: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error(),
-		})
-	}
-
-	return c.JSON(sectors)
-}
-
 func (h *SectorHandler) SyncNewSectorsHandler(c fiber.Ctx) error {
 	results, err := h.usecase.SyncNewSectors(c.Context())
 	if err != nil {
