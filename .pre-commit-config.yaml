@@ -1,0 +1,81 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude_types: [markdown]
+        exclude: LICENSE
+        stages: [pre-commit]
+
+      - id: end-of-file-fixer
+        exclude: LICENSE
+        stages: [pre-commit]
+
+      - id: check-yaml
+        stages: [pre-commit]
+
+      - id: check-added-large-files
+        stages: [pre-commit]
+
+      - id: check-merge-conflict
+        stages: [pre-commit]
+
+  - repo: https://github.com/tekwizely/pre-commit-golang
+    rev: v1.0.0-rc.2
+    hooks:
+      - id: go-imports-repo
+        args:
+          - "-local"
+          - "github.com/PakaiWA/PakaiWA"
+          - "-w"
+        stages: [pre-commit]
+
+      - id: go-vet-repo-mod
+        stages: [pre-commit]
+
+      - id: go-mod-tidy
+        stages: [pre-commit]
+
+  - repo: https://github.com/beeper/pre-commit-go
+    rev: v0.4.2
+    hooks:
+      - id: zerolog-use-stringer
+        stages: [pre-commit]
+
+  - repo: local
+    hooks:
+      # ===== PRE-PUSH (lebih berat) =====
+      - id: gotest
+        name: go test (unit tests)
+        entry: go test ./...
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
+      - id: gobuild
+        name: go build (compile check)
+        entry: go build ./cmd/api
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
+      - id: govulncheck
+        name: govulncheck (Go vulnerability scan)
+        entry: govulncheck ./...
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
+      - id: staticcheck
+        name: staticcheck (advanced linter)
+        entry: staticcheck ./...
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
+      - id: gosec
+        name: gosec (security analyzer)
+        entry: gosec ./...
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
