@@ -30,8 +30,16 @@ func (s *idxService) FetchDelistedStocks(year, month int) ([]models.IdxDelistedS
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Add User-Agent to avoid WAF blocking as per SOP
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+	// Add realistic browser headers to avoid WAF/Cloudflare blocking
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36")
+	req.Header.Set("Accept", "application/json, text/plain, */*")
+	req.Header.Set("Accept-Language", "en-US,en;q=0.9,id;q=0.8")
+	req.Header.Set("Origin", "https://idx.co.id")
+	req.Header.Set("Referer", "https://idx.co.id/")
+	req.Header.Set("Connection", "keep-alive")
+	req.Header.Set("sec-ch-ua", `"Not A(Brand";v="99", "Google Chrome";v="121", "Chromium";v="121"`)
+	req.Header.Set("sec-ch-ua-mobile", "?0")
+	req.Header.Set("sec-ch-ua-platform", `"Windows"`)
 
 	// Log request details as per user request
 	logrus.Infof("Requesting IDX: %s", url)
