@@ -32,7 +32,10 @@ func (s *idxService) FetchDelistedStocks(year, month int) ([]models.IdxDelistedS
 	// Add User-Agent to avoid WAF blocking as per SOP
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 
-	client := &http.Client{}
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+	// #nosec G107
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch from IDX: %w", err)

@@ -1,5 +1,3 @@
-DROP TABLE IF EXISTS idxstock.stocks CASCADE;
-
 CREATE TABLE IF NOT EXISTS idxstock.stocks
 (
     id                  INT            NULL,

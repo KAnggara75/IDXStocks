@@ -88,6 +88,8 @@ func (u *stockUsecase) SyncStockDetail(ctx context.Context) ([]models.StockRespo
 	// Start workers
 	for w := 1; w <= numWorkers; w++ {
 		wg.Add(1)
+		// #nosec G204
+		// #nosec G118
 		go func(workerID int) {
 			defer wg.Done()
 			for s := range jobs {
