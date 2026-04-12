@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/KAnggara75/IDXStocks/internal/models"
 	"github.com/KAnggara75/IDXStocks/internal/usecases"
@@ -61,7 +62,7 @@ func (h *HistoryHandler) SyncStockHistoryHandler(c fiber.Ctx) error {
 func (h *HistoryHandler) GetStockHistoryHandler(c fiber.Ctx) error {
 	code := c.Params("code")
 	output := c.Query("output", "json")
-	includeCode := c.Query("include_code", "false") == "true"
+	fieldsRaw := c.Query("fields")
 
 	if code == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -77,58 +78,51 @@ func (h *HistoryHandler) GetStockHistoryHandler(c fiber.Ctx) error {
 		})
 	}
 
+	// Define all available fields and their getter/formatter
+	allFields := []string{
+		"code", "date", "previous", "open_price", "first_trade", "high", "low", "close", "change",
+		"volume", "value", "frequency", "index_individual", "offer", "offer_volume", "bid", "bid_volume",
+		"listed_shares", "tradeble_shares", "weight_for_index", "foreign_sell", "foreign_buy",
+		"delisting_date", "non_regular_volume", "non_regular_value", "non_regular_frequency", "last_modified",
+	}
+
+	var requestedFields []string
+	if fieldsRaw != "" {
+		requestedFields = strings.Split(fieldsRaw, ",")
+		// Trim spaces and lowercase
+		for i, f := range requestedFields {
+			requestedFields[i] = strings.ToLower(strings.TrimSpace(f))
+		}
+	} else {
+		// Default behavior using include_code
+		includeCode := c.Query("include_code", "false") == "true"
+		if includeCode {
+			requestedFields = allFields
+		} else {
+			// All fields except 'code' and 'last_modified' (to keep it clean)
+			for _, f := range allFields {
+				if f != "code" && f != "last_modified" {
+					requestedFields = append(requestedFields, f)
+				}
+			}
+		}
+	}
+
 	if output == "csv" {
 		c.Set("Content-Type", "text/csv")
 		c.Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.csv\"", strings.ToUpper(code)))
 
 		writer := csv.NewWriter(c)
 		// Write header
-		header := []string{}
-		if includeCode {
-			header = append(header, "code")
-		}
-		header = append(header,
-			"date", "previous", "open_price", "first_trade", "high", "low", "close", "change",
-			"volume", "value", "frequency", "index_individual", "offer", "offer_volume", "bid", "bid_volume",
-			"listed_shares", "tradeble_shares", "weight_for_index", "foreign_sell", "foreign_buy",
-			"delisting_date", "non_regular_volume", "non_regular_value", "non_regular_frequency",
-		)
-		if err := writer.Write(header); err != nil {
+		if err := writer.Write(requestedFields); err != nil {
 			return err
 		}
 
 		for _, row := range data {
-			line := []string{}
-			if includeCode {
-				line = append(line, row.Code)
+			line := make([]string, len(requestedFields))
+			for i, field := range requestedFields {
+				line[i] = getFieldAsString(row, field)
 			}
-			line = append(line,
-				row.Date.Format("2006-01-02"),
-				formatFloat(row.Previous),
-				formatFloat(row.OpenPrice),
-				formatFloat(row.FirstTrade),
-				formatFloat(row.High),
-				formatFloat(row.Low),
-				formatFloat(row.Close),
-				formatFloat(row.Change),
-				formatFloat(row.Volume),
-				formatFloat(row.Value),
-				formatFloat(row.Frequency),
-				formatFloat(row.IndexIndividual),
-				formatFloat(row.Offer),
-				formatFloat(row.OfferVolume),
-				formatFloat(row.Bid),
-				formatFloat(row.BidVolume),
-				formatFloat(row.ListedShares),
-				formatFloat(row.TradebleShares),
-				formatFloat(row.WeightForIndex),
-				formatFloat(row.ForeignSell),
-				formatFloat(row.ForeignBuy),
-				formatString(row.DelistingDate),
-				formatFloat(row.NonRegularVolume),
-				formatFloat(row.NonRegularValue),
-				formatFloat(row.NonRegularFrequency),
-			)
 			if err := writer.Write(line); err != nil {
 				return err
 			}
@@ -138,43 +132,138 @@ func (h *HistoryHandler) GetStockHistoryHandler(c fiber.Ctx) error {
 		return nil
 	}
 
-	if !includeCode {
-		// Strip 'code' from JSON response if requested
-		results := make([]map[string]any, len(data))
-		for i, v := range data {
-			results[i] = map[string]any{
-				"date":                  v.Date,
-				"previous":              v.Previous,
-				"open_price":            v.OpenPrice,
-				"first_trade":           v.FirstTrade,
-				"high":                  v.High,
-				"low":                   v.Low,
-				"close":                 v.Close,
-				"change":                v.Change,
-				"volume":                v.Volume,
-				"value":                 v.Value,
-				"frequency":             v.Frequency,
-				"index_individual":      v.IndexIndividual,
-				"offer":                 v.Offer,
-				"offer_volume":          v.OfferVolume,
-				"bid":                   v.Bid,
-				"bid_volume":            v.BidVolume,
-				"listed_shares":         v.ListedShares,
-				"tradeble_shares":       v.TradebleShares,
-				"weight_for_index":      v.WeightForIndex,
-				"foreign_sell":          v.ForeignSell,
-				"foreign_buy":           v.ForeignBuy,
-				"delisting_date":        v.DelistingDate,
-				"non_regular_volume":    v.NonRegularVolume,
-				"non_regular_value":     v.NonRegularValue,
-				"non_regular_frequency": v.NonRegularFrequency,
-				"last_modified":         v.LastModified,
-			}
+	// JSON Output
+	results := make([]map[string]any, len(data))
+	for i, row := range data {
+		results[i] = make(map[string]any)
+		for _, field := range requestedFields {
+			results[i][field] = getFieldValue(row, field)
 		}
-		return c.JSON(results)
 	}
 
-	return c.JSON(data)
+	return c.JSON(results)
+}
+
+func getFieldAsString(row models.StockHistory, field string) string {
+	switch field {
+	case "code":
+		return row.Code
+	case "date":
+		return row.Date.Format("2006-01-02")
+	case "previous":
+		return formatFloat(row.Previous)
+	case "open_price":
+		return formatFloat(row.OpenPrice)
+	case "first_trade":
+		return formatFloat(row.FirstTrade)
+	case "high":
+		return formatFloat(row.High)
+	case "low":
+		return formatFloat(row.Low)
+	case "close":
+		return formatFloat(row.Close)
+	case "change":
+		return formatFloat(row.Change)
+	case "volume":
+		return formatFloat(row.Volume)
+	case "value":
+		return formatFloat(row.Value)
+	case "frequency":
+		return formatFloat(row.Frequency)
+	case "index_individual":
+		return formatFloat(row.IndexIndividual)
+	case "offer":
+		return formatFloat(row.Offer)
+	case "offer_volume":
+		return formatFloat(row.OfferVolume)
+	case "bid":
+		return formatFloat(row.Bid)
+	case "bid_volume":
+		return formatFloat(row.BidVolume)
+	case "listed_shares":
+		return formatFloat(row.ListedShares)
+	case "tradeble_shares":
+		return formatFloat(row.TradebleShares)
+	case "weight_for_index":
+		return formatFloat(row.WeightForIndex)
+	case "foreign_sell":
+		return formatFloat(row.ForeignSell)
+	case "foreign_buy":
+		return formatFloat(row.ForeignBuy)
+	case "delisting_date":
+		return formatString(row.DelistingDate)
+	case "non_regular_volume":
+		return formatFloat(row.NonRegularVolume)
+	case "non_regular_value":
+		return formatFloat(row.NonRegularValue)
+	case "non_regular_frequency":
+		return formatFloat(row.NonRegularFrequency)
+	case "last_modified":
+		return row.LastModified.Format(time.RFC3339)
+	default:
+		return ""
+	}
+}
+
+func getFieldValue(row models.StockHistory, field string) any {
+	switch field {
+	case "code":
+		return row.Code
+	case "date":
+		return row.Date
+	case "previous":
+		return row.Previous
+	case "open_price":
+		return row.OpenPrice
+	case "first_trade":
+		return row.FirstTrade
+	case "high":
+		return row.High
+	case "low":
+		return row.Low
+	case "close":
+		return row.Close
+	case "change":
+		return row.Change
+	case "volume":
+		return row.Volume
+	case "value":
+		return row.Value
+	case "frequency":
+		return row.Frequency
+	case "index_individual":
+		return row.IndexIndividual
+	case "offer":
+		return row.Offer
+	case "offer_volume":
+		return row.OfferVolume
+	case "bid":
+		return row.Bid
+	case "bid_volume":
+		return row.BidVolume
+	case "listed_shares":
+		return row.ListedShares
+	case "tradeble_shares":
+		return row.TradebleShares
+	case "weight_for_index":
+		return row.WeightForIndex
+	case "foreign_sell":
+		return row.ForeignSell
+	case "foreign_buy":
+		return row.ForeignBuy
+	case "delisting_date":
+		return row.DelistingDate
+	case "non_regular_volume":
+		return row.NonRegularVolume
+	case "non_regular_value":
+		return row.NonRegularValue
+	case "non_regular_frequency":
+		return row.NonRegularFrequency
+	case "last_modified":
+		return row.LastModified
+	default:
+		return nil
+	}
 }
 
 func formatFloat(f *float64) string {
