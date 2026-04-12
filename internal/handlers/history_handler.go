@@ -94,16 +94,10 @@ func (h *HistoryHandler) GetStockHistoryHandler(c fiber.Ctx) error {
 			requestedFields[i] = strings.ToLower(strings.TrimSpace(f))
 		}
 	} else {
-		// Default behavior using include_code
-		includeCode := c.Query("include_code", "false") == "true"
-		if includeCode {
-			requestedFields = allFields
-		} else {
-			// All fields except 'code' and 'last_modified' (to keep it clean)
-			for _, f := range allFields {
-				if f != "code" && f != "last_modified" {
-					requestedFields = append(requestedFields, f)
-				}
+		// Default fields (exclude code and last_modified)
+		for _, f := range allFields {
+			if f != "code" && f != "last_modified" {
+				requestedFields = append(requestedFields, f)
 			}
 		}
 	}
