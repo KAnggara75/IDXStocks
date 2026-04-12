@@ -203,20 +203,28 @@ func (r *stockRepository) UpsertStocksDetail(ctx context.Context, data []models.
 	defer br.Close()
 
 	updatedStocks := make([]models.StockResponse, 0)
-	for range data {
+	for i, s := range data {
 		rows, err := br.Query()
 		if err != nil {
-			// Skip errors for individual stocks to continue with others
+			logrus.Errorf("[%s] Sync failed: %v", s.Code, err)
 			continue
 		}
 
+		hasChange := false
 		for rows.Next() {
 			var sr models.StockResponse
 			if err := rows.Scan(&sr.Id, &sr.Code, &sr.Name); err == nil {
 				updatedStocks = append(updatedStocks, sr)
+				hasChange = true
 			}
 		}
 		rows.Close()
+
+		if hasChange {
+			logrus.Infof("[%d/%d] [%s] - %s: Data Change Detected & Synced", i+1, len(data), s.Code, s.Name)
+		} else {
+			logrus.Debugf("[%d/%d] [%s] - %s: No Change Detected", i+1, len(data), s.Code, s.Name)
+		}
 	}
 
 	if err := br.Close(); err != nil {
