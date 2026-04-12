@@ -59,7 +59,7 @@ func (h *HistoryHandler) SyncStockHistoryHandler(c fiber.Ctx) error {
 	})
 }
 func (h *HistoryHandler) GetStockHistoryHandler(c fiber.Ctx) error {
-	code := c.Query("code")
+	code := c.Params("code")
 	output := c.Query("output", "json")
 	includeCode := c.Query("include_code", "false") == "true"
 
