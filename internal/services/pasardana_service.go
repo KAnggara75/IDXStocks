@@ -104,9 +104,33 @@ func (s *pasardanaService) ParseDate(dateStr string) string {
 	}
 
 	// Try to parse DD-MM-YYYY
-	parts := strings.Split(dateStr, "-")
-	if len(parts) == 3 && len(parts[2]) == 4 {
-		return fmt.Sprintf("%s-%s-%s", parts[2], parts[1], parts[0])
+	if strings.Contains(dateStr, "-") {
+		parts := strings.Split(dateStr, "-")
+		if len(parts) == 3 && len(parts[2]) == 4 {
+			return fmt.Sprintf("%s-%s-%s", parts[2], parts[1], parts[0])
+		}
+	}
+
+	// Try to parse "DD Mon YYYY" (e.g. "17 Des 2009")
+	months := map[string]string{
+		"Jan": "01", "Feb": "02", "Mar": "03", "Apr": "04",
+		"Mei": "05", "May": "05", "Jun": "06", "Jul": "07",
+		"Agu": "08", "Agt": "08", "Aug": "08", "Sep": "09",
+		"Okt": "10", "Oct": "10", "Nov": "11", "Des": "12", "Dec": "12",
+	}
+
+	parts := strings.Split(dateStr, " ")
+	if len(parts) == 3 {
+		day := parts[0]
+		if len(day) == 1 {
+			day = "0" + day
+		}
+		month, ok := months[parts[1]]
+		if !ok {
+			return dateStr
+		}
+		year := parts[2]
+		return fmt.Sprintf("%s-%s-%s", year, month, day)
 	}
 
 	return dateStr
