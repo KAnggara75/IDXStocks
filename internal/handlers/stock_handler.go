@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"mime/multipart"
 	"path/filepath"
@@ -92,4 +93,19 @@ func (h *StockHandler) SyncIDHandler(c fiber.Ctx) error {
 	}
 
 	return c.JSON(stocks)
+}
+
+func (h *StockHandler) SyncStockDetailHandler(c fiber.Ctx) error {
+	// Run synchronization in background
+	go func() {
+		_, err := h.usecase.SyncStockDetail(context.Background())
+		if err != nil {
+			logrus.Errorf("Background stock sync failed: %v", err)
+		}
+	}()
+
+	return c.JSON(fiber.Map{
+		"status":  "success",
+		"message": "Stock synchronization process started in the background",
+	})
 }
