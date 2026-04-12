@@ -15,7 +15,7 @@ import (
 
 type HistoryUsecase interface {
 	SyncStockHistory(ctx context.Context, req models.SyncHistoryRequest, source string) error
-	GetStockHistory(ctx context.Context, code string) ([]models.StockHistory, error)
+	GetStockHistory(ctx context.Context, code string, startDate, endDate *time.Time) ([]models.StockHistory, error)
 }
 
 type historyUsecase struct {
@@ -199,7 +199,7 @@ func (u *historyUsecase) SyncStockHistory(ctx context.Context, req models.SyncHi
 
 	return u.repo.BatchUpsertStockHistory(ctx, records)
 }
-func (u *historyUsecase) GetStockHistory(ctx context.Context, code string) ([]models.StockHistory, error) {
+func (u *historyUsecase) GetStockHistory(ctx context.Context, code string, startDate, endDate *time.Time) ([]models.StockHistory, error) {
 	code = strings.ToUpper(code)
-	return u.repo.GetHistoryByCode(ctx, code)
+	return u.repo.GetHistoryByCode(ctx, code, startDate, endDate)
 }

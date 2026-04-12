@@ -63,6 +63,8 @@ func (h *HistoryHandler) GetStockHistoryHandler(c fiber.Ctx) error {
 	code := c.Params("code")
 	output := c.Query("output", "json")
 	fieldsRaw := c.Query("fields")
+	startDateRaw := c.Query("start_date")
+	endDateRaw := c.Query("end_date")
 
 	if code == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -70,7 +72,25 @@ func (h *HistoryHandler) GetStockHistoryHandler(c fiber.Ctx) error {
 		})
 	}
 
-	data, err := h.usecase.GetStockHistory(c.Context(), code)
+	var startDate, endDate *time.Time
+	if startDateRaw != "" {
+		t, err := time.Parse("2006-01-02", startDateRaw)
+		if err == nil {
+			startDate = &t
+		} else {
+			logrus.Warnf("Invalid start_date format: %s, expected YYYY-MM-DD", startDateRaw)
+		}
+	}
+	if endDateRaw != "" {
+		t, err := time.Parse("2006-01-02", endDateRaw)
+		if err == nil {
+			endDate = &t
+		} else {
+			logrus.Warnf("Invalid end_date format: %s, expected YYYY-MM-DD", endDateRaw)
+		}
+	}
+
+	data, err := h.usecase.GetStockHistory(c.Context(), code, startDate, endDate)
 	if err != nil {
 		logrus.Errorf("Failed to get stock history for %s: %v", code, err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

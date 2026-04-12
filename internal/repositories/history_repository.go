@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/KAnggara75/IDXStocks/internal/models"
 	"github.com/jackc/pgx/v5"
@@ -12,7 +13,7 @@ import (
 
 type HistoryRepository interface {
 	BatchUpsertStockHistory(ctx context.Context, records []models.StockHistory) error
-	GetHistoryByCode(ctx context.Context, code string) ([]models.StockHistory, error)
+	GetHistoryByCode(ctx context.Context, code string, startDate, endDate *time.Time) ([]models.StockHistory, error)
 }
 
 type historyRepository struct {
@@ -145,7 +146,7 @@ func (r *historyRepository) BatchUpsertStockHistory(ctx context.Context, records
 	logrus.Infof("Batch upsert completed. Affected rows: %d", affected)
 	return nil
 }
-func (r *historyRepository) GetHistoryByCode(ctx context.Context, code string) ([]models.StockHistory, error) {
+func (r *historyRepository) GetHistoryByCode(ctx context.Context, code string, startDate, endDate *time.Time) ([]models.StockHistory, error) {
 	query := `
 		SELECT
 			code, date, previous, open_price, first_trade, high, low, close, change,
@@ -155,10 +156,12 @@ func (r *historyRepository) GetHistoryByCode(ctx context.Context, code string) (
 			non_regular_value, non_regular_frequency, last_modified
 		FROM idxstock.history
 		WHERE code = $1
+			AND ($2::DATE IS NULL OR date >= $2)
+			AND ($3::DATE IS NULL OR date <= $3)
 		ORDER BY date ASC
 	`
 
-	rows, err := r.pool.Query(ctx, query, code)
+	rows, err := r.pool.Query(ctx, query, code, startDate, endDate)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get history for %s: %w", code, err)
 	}
