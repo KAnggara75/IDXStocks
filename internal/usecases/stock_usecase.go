@@ -7,6 +7,7 @@ import (
 	"github.com/KAnggara75/IDXStocks/internal/models"
 	"github.com/KAnggara75/IDXStocks/internal/repositories"
 	"github.com/KAnggara75/IDXStocks/internal/services"
+	"github.com/sirupsen/logrus"
 )
 
 type StockUsecase interface {
@@ -68,22 +69,30 @@ func (u *stockUsecase) SyncStockDetail(ctx context.Context) ([]models.StockRespo
 		return nil, err
 	}
 
-	// 2. Loop to get detail for each stock
-	details := make([]models.PasardanaStockDetail, 0, len(simpleStocks))
+	allUpdated := make([]models.StockResponse, 0)
 
-	// For simplicity and to avoid hitting Pasardana too hard, we can use a serial loop
-	// or a limited concurrency loop. Let's start with a simple loop for now as per "junior/AI" request.
+	// 2. Loop to get detail and immediately upsert
 	for _, s := range simpleStocks {
+		logrus.Debugf("Fetching and syncing detail for stock: %s", s.Code)
 		detail, err := u.pasardanaService.FetchStockDetailByCode(s.Code)
 		if err != nil {
-			// Skip if failed to fetch detail for one stock
+			logrus.Errorf("Failed to fetch detail for %s: %v", s.Code, err)
 			continue
 		}
+
 		if detail != nil {
-			details = append(details, *detail)
+			// Immediately upsert to db
+			updated, err := u.repo.UpsertStocksDetail(ctx, []models.PasardanaStockDetail{*detail})
+			if err != nil {
+				logrus.Errorf("Failed to upsert detail for %s: %v", s.Code, err)
+				continue
+			}
+
+			if len(updated) > 0 {
+				allUpdated = append(allUpdated, updated...)
+			}
 		}
 	}
 
-	// 3. Upsert to Repository
-	return u.repo.UpsertStocksDetail(ctx, details)
+	return allUpdated, nil
 }
