@@ -27,3 +27,15 @@ func (h *SectorHandler) SyncSectorHandler(c fiber.Ctx) error {
 
 	return c.JSON(sectors)
 }
+
+func (h *SectorHandler) SyncNewSectorsHandler(c fiber.Ctx) error {
+	results, err := h.usecase.SyncNewSectors(c.Context())
+	if err != nil {
+		logrus.Errorf("Failed to sync new sectors: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return c.JSON(results)
+}

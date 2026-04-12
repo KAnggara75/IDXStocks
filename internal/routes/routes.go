@@ -13,13 +13,14 @@ func Setup(app *fiber.App) {
 	// Dependency Injection
 	stockRepo := repositories.NewStockRepository(database.Pool)
 	sectorRepo := repositories.NewSectorRepository(database.Pool)
+	sectorSearchRepo := repositories.NewSectorSearchRepository(database.Pool)
 	industryRepo := repositories.NewIndustryRepository(database.Pool)
 	stockService := services.NewStockService()
 	pasardanaService := services.NewPasardanaService()
 
 	stockUsecase := usecases.NewStockUsecase(stockRepo, stockService, pasardanaService)
 	industryUsecase := usecases.NewIndustryUsecase(industryRepo, pasardanaService)
-	sectorUsecase := usecases.NewSectorUsecase(sectorRepo, pasardanaService)
+	sectorUsecase := usecases.NewSectorUsecase(sectorRepo, sectorSearchRepo, pasardanaService)
 
 	stockHandler := handlers.NewStockHandler(stockUsecase)
 	industryHandler := handlers.NewIndustryHandler(industryUsecase)
@@ -51,5 +52,6 @@ func Setup(app *fiber.App) {
 	v1.Patch("/stocks/upload", stockHandler.UploadHandler)
 	v1.Put("/stocks/id", stockHandler.SyncIDHandler)
 	v1.Put("/sectors/sync", sectorHandler.SyncSectorHandler)
+	v1.Put("/sector/sync", sectorHandler.SyncNewSectorsHandler)
 	v1.Put("/industries/sync", industryHandler.IndustrySyncHandler)
 }
