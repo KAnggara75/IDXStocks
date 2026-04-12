@@ -14,6 +14,7 @@ type StockRepository interface {
 	BatchInsertStocks(ctx context.Context, stocks []models.Stock) error
 	UpdateStockIDs(ctx context.Context, data []models.PasardanaStock) ([]models.StockResponse, error)
 	UpsertStocksDetail(ctx context.Context, data []models.PasardanaStockDetail) ([]models.StockResponse, error)
+	UpdateDelistingDate(ctx context.Context, code, delistingDate string) (*models.StockResponse, error)
 }
 
 type stockRepository struct {
@@ -144,6 +145,26 @@ func (r *stockRepository) UpdateStockIDs(ctx context.Context, data []models.Pasa
 	return updatedStocks, nil
 }
 
+func (r *stockRepository) UpdateDelistingDate(ctx context.Context, code, delistingDate string) (*models.StockResponse, error) {
+	query := `
+		UPDATE idxstock.stocks
+		SET delisting_date = $1::DATE, last_modified = now()
+		WHERE code = $2
+		RETURNING id, code, name
+	`
+
+	var sr models.StockResponse
+	err := r.pool.QueryRow(ctx, query, delistingDate, code).Scan(&sr.Id, &sr.Code, &sr.Name)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, nil // No stock found with this code
+		}
+		return nil, fmt.Errorf("failed to update delisting date for %s: %w", code, err)
+	}
+
+	return &sr, nil
+}
+
 func (r *stockRepository) UpsertStocksDetail(ctx context.Context, data []models.PasardanaStockDetail) ([]models.StockResponse, error) {
 	if len(data) == 0 {
 		return make([]models.StockResponse, 0), nil
@@ -157,8 +178,8 @@ func (r *stockRepository) UpsertStocksDetail(ctx context.Context, data []models.
 
 	query := `
 		INSERT INTO idxstock.stocks (
-			id, code, name, listing_date, total_employees, annual_dividend, 
-			general_information, founding_date, sector_id, sub_sector_id, 
+			id, code, name, listing_date, total_employees, annual_dividend,
+			general_information, founding_date, sector_id, sub_sector_id,
 			industry_id, sub_industry_id, last_modified
 		)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now())
@@ -175,7 +196,7 @@ func (r *stockRepository) UpsertStocksDetail(ctx context.Context, data []models.
 			industry_id = EXCLUDED.industry_id,
 			sub_industry_id = EXCLUDED.sub_industry_id,
 			last_modified = now()
-		WHERE 
+		WHERE
 			stocks.id IS DISTINCT FROM EXCLUDED.id OR
 			stocks.name IS DISTINCT FROM EXCLUDED.name OR
 			stocks.listing_date IS DISTINCT FROM EXCLUDED.listing_date OR

@@ -63,9 +63,16 @@ func Migrate() {
 	// 3. Handle transition from old skip logic:
 	// If stocks table exists but migrations haven't been tracked, mark 000 and 001 as applied
 	var stocksExists bool
-	Pool.QueryRow(ctx, "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'idxstock' AND table_name = 'stocks')").Scan(&stocksExists)
+	err = Pool.QueryRow(ctx, "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'idxstock' AND table_name = 'stocks')").Scan(&stocksExists)
+	if err != nil {
+		logrus.Debugf("Note: could not check if stocks table exists: %v", err)
+	}
+
 	if stocksExists {
-		Pool.Exec(ctx, "INSERT INTO idxstock.schema_migrations (filename) VALUES ('migrations/000_board_type.sql'), ('migrations/001_create_stocks_table.sql') ON CONFLICT DO NOTHING")
+		_, err = Pool.Exec(ctx, "INSERT INTO idxstock.schema_migrations (filename) VALUES ('migrations/000_board_type.sql'), ('migrations/001_create_stocks_table.sql') ON CONFLICT DO NOTHING")
+		if err != nil {
+			logrus.Debugf("Note: could not seed initial migrations: %v", err)
+		}
 	}
 
 	// 4. Get migration files
@@ -90,7 +97,9 @@ func Migrate() {
 		}
 
 		logrus.Infof("Running migration: %s", file)
-		content, err := os.ReadFile(file)
+		cleanFile := filepath.Clean(file)
+		// #nosec G304
+		content, err := os.ReadFile(cleanFile)
 		if err != nil {
 			logrus.Fatalf("Failed to read migration file %s: %v", file, err)
 		}

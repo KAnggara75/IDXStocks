@@ -1,6 +1,4 @@
-DROP TYPE IF EXISTS idxstock.board CASCADE;
-
-CREATE TYPE idxstock.board AS ENUM (
+CREATE TYPE IF NOT EXISTS idxstock.board AS ENUM (
     'Main',
     'Ekonomi Baru',
     'Acceleration',

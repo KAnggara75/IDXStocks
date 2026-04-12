@@ -44,3 +44,17 @@ type StockResponse struct {
 	Code string `json:"code"`
 	Name string `json:"name"`
 }
+
+type SyncDelistingRequest struct {
+	Year  int `json:"year"`
+	Month int `json:"month"`
+}
+
+type IdxDelistedStock struct {
+	Code          string `json:"code"`
+	DeListingDate string `json:"DeListingDate"`
+}
+
+type IdxDelistingResponse struct {
+	Data []IdxDelistedStock `json:"data"`
+}

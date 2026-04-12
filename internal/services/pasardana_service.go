@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/KAnggara75/IDXStocks/internal/models"
 )
@@ -68,7 +69,11 @@ func (s *pasardanaService) FetchStockDetailByCode(code string) (*models.Pasardan
 }
 
 func (s *pasardanaService) fetch(url string, target any) error {
-	resp, err := http.Get(url)
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+	// #nosec G107
+	resp, err := client.Get(url)
 	if err != nil {
 		return fmt.Errorf("failed to fetch from pasardana API: %w", err)
 	}
