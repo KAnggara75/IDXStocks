@@ -167,9 +167,9 @@ func (u *stockUsecase) SyncDelistingStocks(ctx context.Context, year, month int)
 	// 2. Loop and Update
 	for _, s := range idxStocks {
 		// Parse date
-		formattedDate, err := u.idxService.ParseIdxDate(s.DeListingDate)
-		if err != nil {
-			logrus.Warnf("Skipping stock %s: %v", s.Code, err)
+		formattedDate := utils.NormalizeDate(s.DeListingDate)
+		if formattedDate == "" {
+			logrus.Warnf("Skipping stock %s: invalid delisting date format %s", s.Code, s.DeListingDate)
 			continue
 		}
 
@@ -178,6 +178,57 @@ func (u *stockUsecase) SyncDelistingStocks(ctx context.Context, year, month int)
 		if err != nil {
 			logrus.Errorf("Failed to update delisting date for %s: %v", s.Code, err)
 			continue
+		}
+
+		// Enhancement: If stock doesn't exist in DB, fetch from Pasardana and insert
+		if updated == nil {
+			logrus.Infof("Stock %s not found in DB, fetching from Pasardana...", s.Code)
+
+			detail, err := u.pasardanaService.FetchStockDetailByCode(s.Code)
+			if err != nil {
+				logrus.Errorf("Failed to fetch detail for %s from Pasardana: %v", s.Code, err)
+				continue
+			}
+
+			if detail != nil {
+				// Normalize dates with fallback to Epoch 0
+				epoch0 := "1970-01-01"
+				if detail.ListingDate != nil && *detail.ListingDate != "" {
+					parsed := utils.NormalizeDate(*detail.ListingDate)
+					if parsed == "" {
+						parsed = epoch0
+					}
+					detail.ListingDate = &parsed
+				} else {
+					detail.ListingDate = &epoch0
+				}
+
+				if detail.FoundingDate != nil && *detail.FoundingDate != "" {
+					parsed := utils.NormalizeDate(*detail.FoundingDate)
+					if parsed == "" {
+						parsed = epoch0
+					}
+					detail.FoundingDate = &parsed
+				} else {
+					detail.FoundingDate = &epoch0
+				}
+
+				// Insert new stock
+				_, err = u.repo.UpsertStocksDetail(ctx, []models.PasardanaStockDetail{*detail})
+				if err != nil {
+					logrus.Errorf("Failed to insert new stock %s: %v", s.Code, err)
+					continue
+				}
+
+				logrus.Infof("Inserted new delisted stock from Pasardana: %s", s.Code)
+
+				// Retry update delisting date
+				updated, err = u.repo.UpdateDelistingDate(ctx, s.Code, formattedDate)
+				if err != nil {
+					logrus.Errorf("Failed to update delisting date for %s after insert: %v", s.Code, err)
+					continue
+				}
+			}
 		}
 
 		if updated != nil {
