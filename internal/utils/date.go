@@ -33,20 +33,20 @@ func NormalizeDate(dateStr string) string {
 		}
 	}
 
-	// 3. Robust Month Mapping (Abbreviation & Full Name)
+	// 3. Robust Month Mapping (Abbreviation & Full Name) - All Lowercase
 	months := map[string]string{
-		"Jan": "01", "Januari": "01", "January": "01",
-		"Feb": "02", "Februari": "02", "February": "02",
-		"Mar": "03", "Maret": "03", "March": "03",
-		"Apr": "04", "April": "04",
-		"Mei": "05", "May": "05",
-		"Jun": "06", "Juni": "06", "June": "06",
-		"Jul": "07", "Juli": "07", "July": "07",
-		"Agu": "08", "Agt": "08", "Agustus": "08", "Aug": "08", "August": "08",
-		"Sep": "09", "September": "09",
-		"Okt": "10", "Oktober": "10", "Oct": "10", "October": "10",
-		"Nov": "11", "November": "11",
-		"Des": "12", "Desember": "12", "Dec": "12", "December": "12",
+		"jan": "01", "januari": "01", "january": "01",
+		"feb": "02", "februari": "02", "february": "02",
+		"mar": "03", "maret": "03", "march": "03",
+		"apr": "04", "april": "04",
+		"mei": "05", "may": "05",
+		"jun": "06", "juni": "06", "june": "06",
+		"jul": "07", "juli": "07", "july": "07",
+		"agu": "08", "agt": "08", "agustus": "08", "aug": "08", "august": "08",
+		"sep": "09", "september": "09",
+		"okt": "10", "oktober": "10", "oct": "10", "october": "10",
+		"nov": "11", "november": "11",
+		"des": "12", "desember": "12", "dec": "12", "december": "12",
 	}
 
 	// 4. Handle "-" or " " separated dates
@@ -63,7 +63,7 @@ func NormalizeDate(dateStr string) string {
 		// Try to identify month
 		mIdx := -1
 		for i, p := range parts {
-			if val, ok := months[p]; ok {
+			if val, ok := months[strings.ToLower(p)]; ok {
 				m = val
 				mIdx = i
 				break
