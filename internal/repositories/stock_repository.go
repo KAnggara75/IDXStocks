@@ -221,9 +221,9 @@ func (r *stockRepository) UpsertStocksDetail(ctx context.Context, data []models.
 		rows.Close()
 
 		if hasChange {
-			logrus.Infof("[%d/%d] [%s] - %s: Data Change Detected & Synced", i+1, len(data), s.Code, s.Name)
+			logrus.Infof("[%d/%d] [%s]: Data Change Detected & Synced", i+1, len(data), s.Code)
 		} else {
-			logrus.Debugf("[%d/%d] [%s] - %s: No Change Detected", i+1, len(data), s.Code, s.Name)
+			logrus.Debugf("[%d/%d] [%s]: No Change Detected", i+1, len(data), s.Code)
 		}
 	}
 
@@ -234,8 +234,6 @@ func (r *stockRepository) UpsertStocksDetail(ctx context.Context, data []models.
 	if err := tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
-
-	logrus.Debugf("Successfully upserted %d stock details", len(updatedStocks))
 
 	return updatedStocks, nil
 }
