@@ -17,23 +17,7 @@ func NormalizeDate(dateStr string) string {
 		return dateStr
 	}
 
-	// 2. Handle DD-MM-YYYY (often from Pasardana)
-	if strings.Contains(dateStr, "-") {
-		parts := strings.Split(dateStr, "-")
-		if len(parts) == 3 && len(parts[2]) == 4 {
-			day := parts[0]
-			if len(day) == 1 {
-				day = "0" + day
-			}
-			month := parts[1]
-			if len(month) == 1 {
-				month = "0" + month
-			}
-			return fmt.Sprintf("%s-%s-%s", parts[2], month, day)
-		}
-	}
-
-	// 3. Robust Month Mapping (Abbreviation & Full Name) - All Lowercase
+	// 2. Robust Month Mapping (Abbreviation & Full Name) - All Lowercase
 	months := map[string]string{
 		"jan": "01", "januari": "01", "january": "01",
 		"feb": "02", "februari": "02", "february": "02",
@@ -49,53 +33,69 @@ func NormalizeDate(dateStr string) string {
 		"des": "12", "desember": "12", "dec": "12", "december": "12",
 	}
 
-	// 4. Handle "-" or " " separated dates
+	// 3. Handle various separators
 	sep := "-"
 	if strings.Contains(dateStr, " ") {
 		sep = " "
+	} else if strings.Contains(dateStr, "/") {
+		sep = "/"
 	}
 
 	parts := strings.Split(dateStr, sep)
 	if len(parts) == 3 {
-		// Detect positions
 		var d, m, y string
-
-		// Try to identify month
 		mIdx := -1
+
+		// 3a. Identify Month (either by name or by position in common formats)
 		for i, p := range parts {
-			if val, ok := months[strings.ToLower(p)]; ok {
+			pLow := strings.ToLower(p)
+			if val, ok := months[pLow]; ok {
 				m = val
 				mIdx = i
 				break
 			}
 		}
 
-		if mIdx != -1 {
-			// If month is found, identify day and year from remaining parts
+		// 3b. If no month name found, assume numeric month and identify parts by common patterns
+		if mIdx == -1 {
+			// Case: YYYY-MM-DD (already handled at top, but just in case)
+			if len(parts[0]) == 4 {
+				y = parts[0]
+				m = parts[1]
+				d = parts[2]
+			} else if len(parts[2]) == 4 {
+				y = parts[2]
+				m = parts[1]
+				d = parts[0]
+			}
+		} else {
+			// Month name was found, identify Year and Day from others
 			var others []string
 			for i, p := range parts {
 				if i != mIdx {
 					others = append(others, p)
 				}
 			}
-
 			if len(others) == 2 {
-				// Usually year is 4 digits
-				if len(others[1]) == 4 {
-					y = others[1]
-					d = others[0]
-				} else if len(others[0]) == 4 {
+				if len(others[0]) == 4 {
 					y = others[0]
 					d = others[1]
-				}
-
-				if y != "" && d != "" {
-					if len(d) == 1 {
-						d = "0" + d
-					}
-					return fmt.Sprintf("%s-%s-%s", y, m, d)
+				} else if len(others[1]) == 4 {
+					y = others[1]
+					d = others[0]
 				}
 			}
+		}
+
+		// Final assembly if all parts identified
+		if y != "" && m != "" && d != "" {
+			if len(m) == 1 {
+				m = "0" + m
+			}
+			if len(d) == 1 {
+				d = "0" + d
+			}
+			return fmt.Sprintf("%s-%s-%s", y, m, d)
 		}
 	}
 
