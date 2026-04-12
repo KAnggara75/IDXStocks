@@ -13,7 +13,7 @@ func InitLogger() {
 
 	levelStr := os.Getenv("LOG_LEVEL")
 	if levelStr == "" {
-		levelStr = "debug"
+		levelStr = "info"
 	}
 
 	level, err := logrus.ParseLevel(levelStr)
