@@ -58,15 +58,18 @@ func (s *idxService) FetchDelistedStocks(year, month int) ([]models.IdxDelistedS
 
 	logrus.Infof("IDX Response Status: %d", resp.StatusCode)
 
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+	logrus.Debugf("IDX Response Body: %s", string(bodyBytes))
+
 	if resp.StatusCode != http.StatusOK {
-		// Read raw body if not OK to diagnose non-JSON errors (like Cloudflare HTML)
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		logrus.Errorf("IDX Error Response Body: %s", string(bodyBytes))
 		return nil, fmt.Errorf("IDX API returned status: %d", resp.StatusCode)
 	}
 
 	var idxResp models.IdxDelistingResponse
-	if err := json.NewDecoder(resp.Body).Decode(&idxResp); err != nil {
+	if err := json.Unmarshal(bodyBytes, &idxResp); err != nil {
 		logrus.Errorf("Failed to decode IDX response: %v", err)
 		return nil, fmt.Errorf("failed to decode IDX response: %w", err)
 	}
