@@ -10,7 +10,6 @@ import (
 
 type PasardanaService interface {
 	FetchStockIDs() ([]models.PasardanaStock, error)
-	FetchSectors() ([]models.PasardanaSector, error)
 	FetchStockSearchResult() ([]models.PasardanaSearchResult, error)
 	FetchNewSectors() ([]models.PasardanaNewSector, error)
 	FetchNewSubSectors() ([]models.PasardanaNewSubSector, error)
@@ -25,15 +24,6 @@ func NewPasardanaService() PasardanaService {
 func (s *pasardanaService) FetchStockIDs() ([]models.PasardanaStock, error) {
 	url := "https://www.pasardana.id/api/Stock/GetAllSimpleStocks?username=anonymous"
 	var results []models.PasardanaStock
-	if err := s.fetch(url, &results); err != nil {
-		return nil, err
-	}
-	return results, nil
-}
-
-func (s *pasardanaService) FetchSectors() ([]models.PasardanaSector, error) {
-	url := "https://www.pasardana.id/api/StockNewSector/GetAll"
-	var results []models.PasardanaSector
 	if err := s.fetch(url, &results); err != nil {
 		return nil, err
 	}
