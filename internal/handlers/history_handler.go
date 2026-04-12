@@ -18,7 +18,14 @@ func NewHistoryHandler(usecase usecases.HistoryUsecase) *HistoryHandler {
 }
 
 func (h *HistoryHandler) SyncStockHistoryHandler(c fiber.Ctx) error {
-	source := c.Query("source", "pasardana")
+	source := c.Query("source")
+
+	if source == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Source is required",
+		})
+	}
+
 	var req models.SyncHistoryRequest
 
 	if err := c.Bind().JSON(&req); err != nil {

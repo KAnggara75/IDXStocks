@@ -8,6 +8,7 @@ import (
 	"github.com/KAnggara75/IDXStocks/internal/models"
 	"github.com/KAnggara75/IDXStocks/internal/repositories"
 	"github.com/KAnggara75/IDXStocks/internal/services"
+	"github.com/KAnggara75/IDXStocks/internal/utils"
 	"github.com/sirupsen/logrus"
 )
 
@@ -17,17 +18,20 @@ type HistoryUsecase interface {
 
 type historyUsecase struct {
 	repo             repositories.HistoryRepository
+	stockRepo        repositories.StockRepository
 	pasardanaService services.PasardanaService
 	idxService       services.IdxService
 }
 
 func NewHistoryUsecase(
 	repo repositories.HistoryRepository,
+	stockRepo repositories.StockRepository,
 	pasardanaService services.PasardanaService,
 	idxService services.IdxService,
 ) HistoryUsecase {
 	return &historyUsecase{
 		repo:             repo,
+		stockRepo:        stockRepo,
 		pasardanaService: pasardanaService,
 		idxService:       idxService,
 	}
@@ -132,6 +136,63 @@ func (u *historyUsecase) SyncStockHistory(ctx context.Context, req models.SyncHi
 	if len(records) == 0 {
 		logrus.Warnf("No records found to sync for date %s from %s", targetDate.Format("2006-01-02"), source)
 		return nil
+	}
+
+	// Enhancement: Ensure all stock codes exist in DB before upserting history
+	codeMap := make(map[string]bool)
+	var codes []string
+	for _, r := range records {
+		if !codeMap[r.Code] {
+			codeMap[r.Code] = true
+			codes = append(codes, r.Code)
+		}
+	}
+
+	missingCodes, err := u.stockRepo.FindMissingCodes(ctx, codes)
+	if err != nil {
+		logrus.Errorf("Failed to identify missing codes: %v", err)
+	}
+
+	if len(missingCodes) > 0 {
+		logrus.Infof("Found %d missing stock codes, fetching from Pasardana...", len(missingCodes))
+		for _, code := range missingCodes {
+			detail, err := u.pasardanaService.FetchStockDetailByCode(code)
+			if err != nil {
+				logrus.Warnf("Failed to fetch detail for %s from Pasardana: %v", code, err)
+				continue
+			}
+
+			if detail != nil {
+				// Normalize dates with fallback to Epoch 0 (consistent with StockUsecase)
+				epoch0 := "1970-01-01"
+				if detail.ListingDate != nil && *detail.ListingDate != "" {
+					parsed := utils.NormalizeDate(*detail.ListingDate)
+					if parsed == "" {
+						parsed = epoch0
+					}
+					detail.ListingDate = &parsed
+				} else {
+					detail.ListingDate = &epoch0
+				}
+
+				if detail.FoundingDate != nil && *detail.FoundingDate != "" {
+					parsed := utils.NormalizeDate(*detail.FoundingDate)
+					if parsed == "" {
+						parsed = epoch0
+					}
+					detail.FoundingDate = &parsed
+				} else {
+					detail.FoundingDate = &epoch0
+				}
+
+				_, err = u.stockRepo.UpsertStocksDetail(ctx, []models.PasardanaStockDetail{*detail})
+				if err != nil {
+					logrus.Errorf("Failed to auto-insert missing stock %s: %v", code, err)
+					continue
+				}
+				logrus.Infof("Auto-inserted missing stock: %s", code)
+			}
+		}
 	}
 
 	return u.repo.BatchUpsertStockHistory(ctx, records)
