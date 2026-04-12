@@ -14,6 +14,7 @@ import (
 
 type IdxService interface {
 	FetchDelistedStocks(year, month int) ([]models.IdxDelistedStock, error)
+	FetchStockSummary(year, month, day int) ([]models.IdxSummaryData, error)
 	ParseIdxDate(dateStr string) (string, error)
 }
 
@@ -72,6 +73,46 @@ func (s *idxService) FetchDelistedStocks(year, month int) ([]models.IdxDelistedS
 	if err := json.Unmarshal(bodyBytes, &idxResp); err != nil {
 		logrus.Errorf("Failed to decode IDX response: %v", err)
 		return nil, fmt.Errorf("failed to decode IDX response: %w", err)
+	}
+
+	return idxResp.Data, nil
+}
+
+func (s *idxService) FetchStockSummary(year, month, day int) ([]models.IdxSummaryData, error) {
+	url := fmt.Sprintf("https://idx.co.id/primary/TradingSummary/GetStockSummary?date=%04d%02d%02d", year, month, day)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// Add realistic browser headers
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36")
+	req.Header.Set("Accept", "application/json, text/plain, */*")
+	req.Header.Set("Accept-Language", "en-US,en;q=0.9,id;q=0.8")
+	req.Header.Set("Origin", "https://idx.co.id")
+	req.Header.Set("Referer", "https://idx.co.id/")
+	req.Header.Set("Connection", "keep-alive")
+
+	logrus.Infof("Requesting IDX Summary: %s", url)
+
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+	// #nosec G107
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch from IDX: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("IDX API returned status: %d", resp.StatusCode)
+	}
+
+	var idxResp models.IdxSummaryResponse
+	if err := json.NewDecoder(resp.Body).Decode(&idxResp); err != nil {
+		return nil, fmt.Errorf("failed to decode IDX summary response: %w", err)
 	}
 
 	return idxResp.Data, nil

@@ -15,6 +15,7 @@ type StockRepository interface {
 	UpdateStockIDs(ctx context.Context, data []models.PasardanaStock) ([]models.StockResponse, error)
 	UpsertStocksDetail(ctx context.Context, data []models.PasardanaStockDetail) ([]models.StockResponse, error)
 	UpdateDelistingDate(ctx context.Context, code, delistingDate string) (*models.StockResponse, error)
+	FindMissingCodes(ctx context.Context, codes []string) ([]string, error)
 }
 
 type stockRepository struct {
@@ -257,4 +258,32 @@ func (r *stockRepository) UpsertStocksDetail(ctx context.Context, data []models.
 	}
 
 	return updatedStocks, nil
+}
+func (r *stockRepository) FindMissingCodes(ctx context.Context, codes []string) ([]string, error) {
+	if len(codes) == 0 {
+		return nil, nil
+	}
+
+	query := `
+		SELECT c FROM (SELECT UNNEST($1::VARCHAR[]) as c) AS input
+		LEFT JOIN idxstock.stocks s ON input.c = s.code
+		WHERE s.code IS NULL
+	`
+
+	rows, err := r.pool.Query(ctx, query, codes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find missing codes: %w", err)
+	}
+	defer rows.Close()
+
+	var missingCodes []string
+	for rows.Next() {
+		var code string
+		if err := rows.Scan(&code); err != nil {
+			return nil, err
+		}
+		missingCodes = append(missingCodes, code)
+	}
+
+	return missingCodes, nil
 }
