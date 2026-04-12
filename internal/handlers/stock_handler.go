@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/KAnggara75/IDXStocks/internal/usecases"
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/sirupsen/logrus"
 )
 
@@ -21,7 +21,7 @@ func NewStockHandler(usecase usecases.StockUsecase) *StockHandler {
 	}
 }
 
-func (h *StockHandler) PreviewHandler(c *fiber.Ctx) error {
+func (h *StockHandler) PreviewHandler(c fiber.Ctx) error {
 	f, err := h.getFileAndValidate(c)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -41,7 +41,7 @@ func (h *StockHandler) PreviewHandler(c *fiber.Ctx) error {
 	return c.JSON(stocks)
 }
 
-func (h *StockHandler) UploadHandler(c *fiber.Ctx) error {
+func (h *StockHandler) UploadHandler(c fiber.Ctx) error {
 	f, err := h.getFileAndValidate(c)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -61,7 +61,7 @@ func (h *StockHandler) UploadHandler(c *fiber.Ctx) error {
 	return c.JSON(stocks)
 }
 
-func (h *StockHandler) getFileAndValidate(c *fiber.Ctx) (multipart.File, error) {
+func (h *StockHandler) getFileAndValidate(c fiber.Ctx) (multipart.File, error) {
 	file, err := c.FormFile("file")
 	if err != nil {
 		logrus.Errorf("Failed to get file from form: %v", err)
@@ -82,7 +82,7 @@ func (h *StockHandler) getFileAndValidate(c *fiber.Ctx) (multipart.File, error) 
 	return f, nil
 }
 
-func (h *StockHandler) SyncIDHandler(c *fiber.Ctx) error {
+func (h *StockHandler) SyncIDHandler(c fiber.Ctx) error {
 	stocks, err := h.usecase.SyncStockIDs(c.Context())
 	if err != nil {
 		logrus.Errorf("Failed to sync stock IDs: %v", err)

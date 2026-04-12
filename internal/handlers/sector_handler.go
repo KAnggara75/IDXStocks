@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"github.com/KAnggara75/IDXStocks/internal/usecases"
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/sirupsen/logrus"
 )
 
@@ -16,7 +16,7 @@ func NewSectorHandler(usecase usecases.SectorUsecase) *SectorHandler {
 	}
 }
 
-func (h *SectorHandler) SyncSectorHandler(c *fiber.Ctx) error {
+func (h *SectorHandler) SyncSectorHandler(c fiber.Ctx) error {
 	sectors, err := h.usecase.SyncSectors(c.Context())
 	if err != nil {
 		logrus.Errorf("Failed to sync sectors: %v", err)

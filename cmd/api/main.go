@@ -4,8 +4,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/recover"
 	"github.com/sirupsen/logrus"
 
 	"github.com/KAnggara75/IDXStocks/internal/config"
@@ -31,7 +31,7 @@ func main() {
 	app.Use(recover.New())
 
 	// Custom Logger Middleware using logrus
-	app.Use(func(c *fiber.Ctx) error {
+	app.Use(func(c fiber.Ctx) error {
 		start := time.Now()
 		err := c.Next()
 		stop := time.Now()

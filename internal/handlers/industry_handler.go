@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"github.com/KAnggara75/IDXStocks/internal/usecases"
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/sirupsen/logrus"
 )
 
@@ -16,7 +16,7 @@ func NewIndustryHandler(usecase usecases.IndustryUsecase) *IndustryHandler {
 	}
 }
 
-func (h *IndustryHandler) IndustrySyncHandler(c *fiber.Ctx) error {
+func (h *IndustryHandler) IndustrySyncHandler(c fiber.Ctx) error {
 	results, err := h.usecase.SyncIndustry(c.Context())
 	if err != nil {
 		logrus.Errorf("Failed to sync industries: %v", err)

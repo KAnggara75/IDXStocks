@@ -6,7 +6,7 @@ import (
 	"github.com/KAnggara75/IDXStocks/internal/repositories"
 	"github.com/KAnggara75/IDXStocks/internal/services"
 	"github.com/KAnggara75/IDXStocks/internal/usecases"
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 func Setup(app *fiber.App) {
@@ -25,7 +25,7 @@ func Setup(app *fiber.App) {
 	industryHandler := handlers.NewIndustryHandler(industryUsecase)
 	sectorHandler := handlers.NewSectorHandler(sectorUsecase)
 
-	app.Get("/ping", func(c *fiber.Ctx) error {
+	app.Get("/ping", func(c fiber.Ctx) error {
 		err := database.Pool.Ping(c.Context())
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
@@ -39,7 +39,7 @@ func Setup(app *fiber.App) {
 		})
 	})
 
-	app.Get("/health", func(c *fiber.Ctx) error {
+	app.Get("/health", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"status": "up",
 		})
