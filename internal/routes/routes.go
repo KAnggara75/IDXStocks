@@ -50,6 +50,6 @@ func Setup(app *fiber.App) {
 	v1.Post("/stocks/upload", stockHandler.PreviewHandler)
 	v1.Patch("/stocks/upload", stockHandler.UploadHandler)
 	v1.Put("/stocks/id", stockHandler.SyncIDHandler)
-	v1.Put("/sector/sync", sectorHandler.SyncNewSectorsHandler)
+	v1.Put("/sectors/sync", sectorHandler.SyncNewSectorsHandler)
 	v1.Put("/industries/sync", industryHandler.IndustrySyncHandler)
 }
