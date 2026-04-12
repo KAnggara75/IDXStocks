@@ -15,6 +15,7 @@ type PasardanaService interface {
 	FetchNewSectors() ([]models.PasardanaNewSector, error)
 	FetchNewSubSectors() ([]models.PasardanaNewSubSector, error)
 	FetchStockDetailByCode(code string) (*models.PasardanaStockDetail, error)
+	FetchStockHistory(year, month, day int) ([]models.PasardanaHistoryResponse, error)
 }
 
 type pasardanaService struct{}
@@ -66,6 +67,15 @@ func (s *pasardanaService) FetchStockDetailByCode(code string) (*models.Pasardan
 		return nil, err
 	}
 	return &result, nil
+}
+
+func (s *pasardanaService) FetchStockHistory(year, month, day int) ([]models.PasardanaHistoryResponse, error) {
+	url := fmt.Sprintf("https://www.pasardana.id/api/StockSearchResult/GetAll?date=%02d/%02d/%04d", month, day, year)
+	var results []models.PasardanaHistoryResponse
+	if err := s.fetch(url, &results); err != nil {
+		return nil, err
+	}
+	return results, nil
 }
 
 func (s *pasardanaService) fetch(url string, target any) error {

@@ -14,6 +14,8 @@ func Setup(app *fiber.App) {
 	stockRepo := repositories.NewStockRepository(database.Pool)
 	sectorSearchRepo := repositories.NewSectorSearchRepository(database.Pool)
 	industryRepo := repositories.NewIndustryRepository(database.Pool)
+	historyRepo := repositories.NewHistoryRepository(database.Pool)
+
 	stockService := services.NewStockService()
 	pasardanaService := services.NewPasardanaService()
 	idxService := services.NewIdxService()
@@ -21,10 +23,12 @@ func Setup(app *fiber.App) {
 	stockUsecase := usecases.NewStockUsecase(stockRepo, stockService, pasardanaService, idxService)
 	industryUsecase := usecases.NewIndustryUsecase(industryRepo, pasardanaService)
 	sectorUsecase := usecases.NewSectorUsecase(sectorSearchRepo, pasardanaService)
+	historyUsecase := usecases.NewHistoryUsecase(historyRepo, pasardanaService, idxService)
 
 	stockHandler := handlers.NewStockHandler(stockUsecase)
 	industryHandler := handlers.NewIndustryHandler(industryUsecase)
 	sectorHandler := handlers.NewSectorHandler(sectorUsecase)
+	historyHandler := handlers.NewHistoryHandler(historyUsecase)
 
 	app.Get("/ping", func(c fiber.Ctx) error {
 		err := database.Pool.Ping(c.Context())
@@ -53,6 +57,7 @@ func Setup(app *fiber.App) {
 	v1.Put("/stocks/id", stockHandler.SyncIDHandler)
 	v1.Put("/stocks/sync", stockHandler.SyncStockDetailHandler)
 	v1.Put("/stocks/delisting/sync", stockHandler.SyncDelistingStocksHandler)
+	v1.Put("/stocks/history/sync", historyHandler.SyncStockHistoryHandler)
 	v1.Put("/sectors/sync", sectorHandler.SyncNewSectorsHandler)
 	v1.Put("/industries/sync", industryHandler.IndustrySyncHandler)
 }
