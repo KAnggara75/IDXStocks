@@ -101,14 +101,26 @@ func (u *stockUsecase) SyncStockDetail(ctx context.Context) ([]models.StockRespo
 				}
 
 				if detail != nil {
-					// Parse dates to YYYY-MM-DD format
-					if detail.ListingDate != nil {
+					// Parse dates to YYYY-MM-DD format, default to Unix epoch (1970-01-01) if null or empty
+					epoch0 := "1970-01-01"
+					if detail.ListingDate != nil && *detail.ListingDate != "" {
 						parsed := utils.NormalizeDate(*detail.ListingDate)
+						if parsed == "" {
+							parsed = epoch0
+						}
 						detail.ListingDate = &parsed
+					} else {
+						detail.ListingDate = &epoch0
 					}
-					if detail.FoundingDate != nil {
+
+					if detail.FoundingDate != nil && *detail.FoundingDate != "" {
 						parsed := utils.NormalizeDate(*detail.FoundingDate)
+						if parsed == "" {
+							parsed = epoch0
+						}
 						detail.FoundingDate = &parsed
+					} else {
+						detail.FoundingDate = &epoch0
 					}
 
 					updated, err := u.repo.UpsertStocksDetail(context.Background(), []models.PasardanaStockDetail{*detail})
