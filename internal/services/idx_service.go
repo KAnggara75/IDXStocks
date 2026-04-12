@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/KAnggara75/IDXStocks/internal/models"
+	"github.com/sirupsen/logrus"
 )
 
 type IdxService interface {
@@ -32,6 +33,10 @@ func (s *idxService) FetchDelistedStocks(year, month int) ([]models.IdxDelistedS
 	// Add User-Agent to avoid WAF blocking as per SOP
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 
+	// Log request details as per user request
+	logrus.Infof("Requesting IDX: %s", url)
+	logrus.Debugf("Request Headers: %v", req.Header)
+
 	client := &http.Client{
 		Timeout: 30 * time.Second,
 	}
@@ -42,12 +47,19 @@ func (s *idxService) FetchDelistedStocks(year, month int) ([]models.IdxDelistedS
 	}
 	defer resp.Body.Close()
 
+	logrus.Infof("IDX Response Status: %d", resp.StatusCode)
+
 	if resp.StatusCode != http.StatusOK {
+		// Log response body if possible to diagnose errors (like 403 WAF)
+		var bodyMsg interface{}
+		_ = json.NewDecoder(resp.Body).Decode(&bodyMsg)
+		logrus.Errorf("IDX Error Response: %v", bodyMsg)
 		return nil, fmt.Errorf("IDX API returned status: %d", resp.StatusCode)
 	}
 
 	var idxResp models.IdxDelistingResponse
 	if err := json.NewDecoder(resp.Body).Decode(&idxResp); err != nil {
+		logrus.Errorf("Failed to decode IDX response: %v", err)
 		return nil, fmt.Errorf("failed to decode IDX response: %w", err)
 	}
 
