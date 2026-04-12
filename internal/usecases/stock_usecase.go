@@ -4,11 +4,12 @@ import (
 	"context"
 	"io"
 
+	"sync"
+
 	"github.com/KAnggara75/IDXStocks/internal/models"
 	"github.com/KAnggara75/IDXStocks/internal/repositories"
 	"github.com/KAnggara75/IDXStocks/internal/services"
 	"github.com/sirupsen/logrus"
-	"sync"
 )
 
 type StockUsecase interface {
@@ -16,23 +17,27 @@ type StockUsecase interface {
 	UploadStocks(ctx context.Context, file io.Reader) ([]models.Stock, error)
 	SyncStockIDs(ctx context.Context) ([]models.StockResponse, error)
 	SyncStockDetail(ctx context.Context) ([]models.StockResponse, error)
+	SyncDelistingStocks(ctx context.Context, year, month int) ([]models.StockResponse, error)
 }
 
 type stockUsecase struct {
 	repo             repositories.StockRepository
 	service          services.StockService
 	pasardanaService services.PasardanaService
+	idxService       services.IdxService
 }
 
 func NewStockUsecase(
 	repo repositories.StockRepository,
 	service services.StockService,
 	pasardanaService services.PasardanaService,
+	idxService services.IdxService,
 ) StockUsecase {
 	return &stockUsecase{
 		repo:             repo,
 		service:          service,
 		pasardanaService: pasardanaService,
+		idxService:       idxService,
 	}
 }
 
@@ -77,7 +82,7 @@ func (u *stockUsecase) SyncStockDetail(ctx context.Context) ([]models.StockRespo
 	const numWorkers = 20
 	jobs := make(chan models.PasardanaStock, totalStocks)
 	results := make(chan []models.StockResponse, totalStocks)
-	
+
 	var wg sync.WaitGroup
 
 	// Start workers
@@ -123,4 +128,37 @@ func (u *stockUsecase) SyncStockDetail(ctx context.Context) ([]models.StockRespo
 
 	logrus.Infof("Parallel sync completed. Total updated: %d", len(allUpdated))
 	return allUpdated, nil
+}
+
+func (u *stockUsecase) SyncDelistingStocks(ctx context.Context, year, month int) ([]models.StockResponse, error) {
+	// 1. Fetch from IDX
+	idxStocks, err := u.idxService.FetchDelistedStocks(year, month)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedStocks := make([]models.StockResponse, 0)
+
+	// 2. Loop and Update
+	for _, s := range idxStocks {
+		// Parse date
+		formattedDate, err := u.idxService.ParseIdxDate(s.DeListingDate)
+		if err != nil {
+			logrus.Warnf("Skipping stock %s: %v", s.Code, err)
+			continue
+		}
+
+		// Update DB
+		updated, err := u.repo.UpdateDelistingDate(ctx, s.Code, formattedDate)
+		if err != nil {
+			logrus.Errorf("Failed to update delisting date for %s: %v", s.Code, err)
+			continue
+		}
+
+		if updated != nil {
+			updatedStocks = append(updatedStocks, *updated)
+		}
+	}
+
+	return updatedStocks, nil
 }

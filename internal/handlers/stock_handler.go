@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/KAnggara75/IDXStocks/internal/models"
 	"github.com/KAnggara75/IDXStocks/internal/usecases"
 	"github.com/gofiber/fiber/v3"
 	"github.com/sirupsen/logrus"
@@ -108,4 +109,29 @@ func (h *StockHandler) SyncStockDetailHandler(c fiber.Ctx) error {
 		"status":  "success",
 		"message": "Stock synchronization process started in the background",
 	})
+}
+
+func (h *StockHandler) SyncDelistingStocksHandler(c fiber.Ctx) error {
+	var req models.SyncDelistingRequest
+	if err := c.Bind().JSON(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request body",
+		})
+	}
+
+	if req.Year == 0 || req.Month == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Year and month are required",
+		})
+	}
+
+	stocks, err := h.usecase.SyncDelistingStocks(c.Context(), req.Year, req.Month)
+	if err != nil {
+		logrus.Errorf("Failed to sync delisting stocks: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return c.JSON(stocks)
 }
