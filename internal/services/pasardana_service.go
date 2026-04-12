@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/KAnggara75/IDXStocks/internal/models"
-	"github.com/KAnggara75/IDXStocks/internal/utils"
 )
 
 type PasardanaService interface {
@@ -16,7 +15,6 @@ type PasardanaService interface {
 	FetchNewSectors() ([]models.PasardanaNewSector, error)
 	FetchNewSubSectors() ([]models.PasardanaNewSubSector, error)
 	FetchStockDetailByCode(code string) (*models.PasardanaStockDetail, error)
-	ParseDate(dateStr string) string
 }
 
 type pasardanaService struct{}
@@ -90,8 +88,4 @@ func (s *pasardanaService) fetch(url string, target any) error {
 	}
 
 	return nil
-}
-
-func (s *pasardanaService) ParseDate(dateStr string) string {
-	return utils.NormalizeDate(dateStr)
 }

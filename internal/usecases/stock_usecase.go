@@ -9,6 +9,7 @@ import (
 	"github.com/KAnggara75/IDXStocks/internal/models"
 	"github.com/KAnggara75/IDXStocks/internal/repositories"
 	"github.com/KAnggara75/IDXStocks/internal/services"
+	"github.com/KAnggara75/IDXStocks/internal/utils"
 	"github.com/sirupsen/logrus"
 )
 
@@ -102,11 +103,11 @@ func (u *stockUsecase) SyncStockDetail(ctx context.Context) ([]models.StockRespo
 				if detail != nil {
 					// Parse dates to YYYY-MM-DD format
 					if detail.ListingDate != nil {
-						parsed := u.pasardanaService.ParseDate(*detail.ListingDate)
+						parsed := utils.NormalizeDate(*detail.ListingDate)
 						detail.ListingDate = &parsed
 					}
 					if detail.FoundingDate != nil {
-						parsed := u.pasardanaService.ParseDate(*detail.FoundingDate)
+						parsed := utils.NormalizeDate(*detail.FoundingDate)
 						detail.FoundingDate = &parsed
 					}
 
