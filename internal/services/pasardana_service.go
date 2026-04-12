@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/KAnggara75/IDXStocks/internal/models"
@@ -15,6 +16,7 @@ type PasardanaService interface {
 	FetchNewSectors() ([]models.PasardanaNewSector, error)
 	FetchNewSubSectors() ([]models.PasardanaNewSubSector, error)
 	FetchStockDetailByCode(code string) (*models.PasardanaStockDetail, error)
+	ParseDate(dateStr string) string
 }
 
 type pasardanaService struct{}
@@ -88,4 +90,24 @@ func (s *pasardanaService) fetch(url string, target any) error {
 	}
 
 	return nil
+}
+
+func (s *pasardanaService) ParseDate(dateStr string) string {
+	dateStr = strings.TrimSpace(dateStr)
+	if dateStr == "" {
+		return ""
+	}
+
+	// If it's already YYYY-MM-DD, return it
+	if len(dateStr) == 10 && dateStr[4] == '-' && dateStr[7] == '-' {
+		return dateStr
+	}
+
+	// Try to parse DD-MM-YYYY
+	parts := strings.Split(dateStr, "-")
+	if len(parts) == 3 && len(parts[2]) == 4 {
+		return fmt.Sprintf("%s-%s-%s", parts[2], parts[1], parts[0])
+	}
+
+	return dateStr
 }

@@ -182,7 +182,7 @@ func (r *stockRepository) UpsertStocksDetail(ctx context.Context, data []models.
 			general_information, founding_date, sector_id, sub_sector_id,
 			industry_id, sub_industry_id, last_modified
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now())
+		VALUES ($1, $2, $3, $4::DATE, $5, $6, $7, $8, $9, $10, $11, $12, now())
 		ON CONFLICT (code) DO UPDATE SET
 			id = EXCLUDED.id,
 			name = EXCLUDED.name,
@@ -242,7 +242,7 @@ func (r *stockRepository) UpsertStocksDetail(ctx context.Context, data []models.
 		rows.Close()
 
 		if hasChange {
-			logrus.Infof("[%d/%d] [%s]: Data Change Detected & Synced", i+1, len(data), s.Code)
+			logrus.Infof("[%d/%d] [%s]: Data Change Detected - Synced", i+1, len(data), s.Code)
 		} else {
 			logrus.Debugf("[%d/%d] [%s]: No Change Detected", i+1, len(data), s.Code)
 		}

@@ -100,6 +100,16 @@ func (u *stockUsecase) SyncStockDetail(ctx context.Context) ([]models.StockRespo
 				}
 
 				if detail != nil {
+					// Parse dates to YYYY-MM-DD format
+					if detail.ListingDate != nil {
+						parsed := u.pasardanaService.ParseDate(*detail.ListingDate)
+						detail.ListingDate = &parsed
+					}
+					if detail.FoundingDate != nil {
+						parsed := u.pasardanaService.ParseDate(*detail.FoundingDate)
+						detail.FoundingDate = &parsed
+					}
+
 					updated, err := u.repo.UpsertStocksDetail(context.Background(), []models.PasardanaStockDetail{*detail})
 					if err != nil {
 						logrus.Errorf("[Worker %d] Failed to upsert %s: %v", workerID, s.Code, err)
