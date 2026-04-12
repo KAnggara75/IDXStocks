@@ -12,6 +12,7 @@ import (
 
 type HistoryRepository interface {
 	BatchUpsertStockHistory(ctx context.Context, records []models.StockHistory) error
+	GetHistoryByCode(ctx context.Context, code string) ([]models.StockHistory, error)
 }
 
 type historyRepository struct {
@@ -143,4 +144,42 @@ func (r *historyRepository) BatchUpsertStockHistory(ctx context.Context, records
 
 	logrus.Infof("Batch upsert completed. Affected rows: %d", affected)
 	return nil
+}
+func (r *historyRepository) GetHistoryByCode(ctx context.Context, code string) ([]models.StockHistory, error) {
+	query := `
+		SELECT
+			code, date, previous, open_price, first_trade, high, low, close, change,
+			volume, value, frequency, index_individual, offer, offer_volume,
+			bid, bid_volume, listed_shares, tradeble_shares, weight_for_index,
+			foreign_sell, foreign_buy, delisting_date, non_regular_volume,
+			non_regular_value, non_regular_frequency, last_modified
+		FROM idxstock.history
+		WHERE code = $1
+		ORDER BY date ASC
+	`
+
+	rows, err := r.pool.Query(ctx, query, code)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get history for %s: %w", code, err)
+	}
+	defer rows.Close()
+
+	var records []models.StockHistory
+	for rows.Next() {
+		var h models.StockHistory
+		err := rows.Scan(
+			&h.Code, &h.Date, &h.Previous, &h.OpenPrice, &h.FirstTrade,
+			&h.High, &h.Low, &h.Close, &h.Change, &h.Volume, &h.Value,
+			&h.Frequency, &h.IndexIndividual, &h.Offer, &h.OfferVolume,
+			&h.Bid, &h.BidVolume, &h.ListedShares, &h.TradebleShares,
+			&h.WeightForIndex, &h.ForeignSell, &h.ForeignBuy, &h.DelistingDate,
+			&h.NonRegularVolume, &h.NonRegularValue, &h.NonRegularFrequency, &h.LastModified,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan history record: %w", err)
+		}
+		records = append(records, h)
+	}
+
+	return records, nil
 }

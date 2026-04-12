@@ -3,6 +3,7 @@ package usecases
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/KAnggara75/IDXStocks/internal/models"
@@ -14,6 +15,7 @@ import (
 
 type HistoryUsecase interface {
 	SyncStockHistory(ctx context.Context, req models.SyncHistoryRequest, source string) error
+	GetStockHistory(ctx context.Context, code string) ([]models.StockHistory, error)
 }
 
 type historyUsecase struct {
@@ -196,4 +198,8 @@ func (u *historyUsecase) SyncStockHistory(ctx context.Context, req models.SyncHi
 	}
 
 	return u.repo.BatchUpsertStockHistory(ctx, records)
+}
+func (u *historyUsecase) GetStockHistory(ctx context.Context, code string) ([]models.StockHistory, error) {
+	code = strings.ToUpper(code)
+	return u.repo.GetHistoryByCode(ctx, code)
 }
