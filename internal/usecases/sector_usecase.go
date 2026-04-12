@@ -36,13 +36,7 @@ func (u *sectorUsecase) SyncNewSectors(ctx context.Context) (*models.SectorSyncN
 
 	sectors := make([]models.SectorNew, 0, len(pasardanaSectors))
 	for _, ps := range pasardanaSectors {
-		sectors = append(sectors, models.SectorNew{
-			Id:          ps.Id,
-			Code:        ps.Code,
-			Name:        ps.Name,
-			NameEn:      ps.NameEn,
-			Description: ps.Description,
-		})
+		sectors = append(sectors, models.SectorNew(ps))
 	}
 
 	updatedSectors, err := u.searchRepo.UpsertNewSectors(ctx, sectors)
