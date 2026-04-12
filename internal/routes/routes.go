@@ -1,31 +1,40 @@
 package routes
 
 import (
-	"github.com/gofiber/fiber/v2"
 	"github.com/KAnggara75/IDXStocks/internal/database"
 	"github.com/KAnggara75/IDXStocks/internal/handlers"
 	"github.com/KAnggara75/IDXStocks/internal/repositories"
 	"github.com/KAnggara75/IDXStocks/internal/services"
 	"github.com/KAnggara75/IDXStocks/internal/usecases"
+	"github.com/gofiber/fiber/v2"
 )
 
 func Setup(app *fiber.App) {
 	// Dependency Injection
 	stockRepo := repositories.NewStockRepository(database.Pool)
+	sectorRepo := repositories.NewSectorRepository(database.Pool)
+	industryRepo := repositories.NewIndustryRepository(database.Pool)
 	stockService := services.NewStockService()
-	stockUsecase := usecases.NewStockUsecase(stockRepo, stockService)
+	pasardanaService := services.NewPasardanaService()
+
+	stockUsecase := usecases.NewStockUsecase(stockRepo, stockService, pasardanaService)
+	industryUsecase := usecases.NewIndustryUsecase(industryRepo, pasardanaService)
+	sectorUsecase := usecases.NewSectorUsecase(sectorRepo, pasardanaService)
+
 	stockHandler := handlers.NewStockHandler(stockUsecase)
+	industryHandler := handlers.NewIndustryHandler(industryUsecase)
+	sectorHandler := handlers.NewSectorHandler(sectorUsecase)
 
 	app.Get("/ping", func(c *fiber.Ctx) error {
 		err := database.Pool.Ping(c.Context())
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
-				"status": "error",
+				"status":  "error",
 				"message": "database connection failed",
 			})
 		}
 		return c.JSON(fiber.Map{
-			"status": "ok",
+			"status":  "ok",
 			"message": "pong",
 		})
 	})
@@ -41,4 +50,6 @@ func Setup(app *fiber.App) {
 	v1.Post("/stocks/upload", stockHandler.PreviewHandler)
 	v1.Patch("/stocks/upload", stockHandler.UploadHandler)
 	v1.Put("/stocks/id", stockHandler.SyncIDHandler)
+	v1.Put("/sectors/sync", sectorHandler.SyncSectorHandler)
+	v1.Put("/industries/sync", industryHandler.IndustrySyncHandler)
 }

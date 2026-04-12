@@ -43,32 +43,32 @@ func Connect() {
 func Migrate() {
 	ctx := context.Background()
 
-	// 1. Check if the table idxstock.stocks already exists
-	var tableExists bool
-	checkQuery := `
-		SELECT EXISTS (
-			SELECT FROM information_schema.tables 
-			WHERE  table_schema = 'idxstock'
-			AND    table_name   = 'stocks'
-		);
-	`
-	err := Pool.QueryRow(ctx, checkQuery).Scan(&tableExists)
-	if err != nil {
-		logrus.Errorf("Failed to check if table exists: %v", err)
-	}
-
-	if tableExists {
-		logrus.Info("Table idxstock.stocks already exists, skipping migrations")
-		return
-	}
-
-	// 2. Ensure schema exists
-	_, err = Pool.Exec(ctx, "CREATE SCHEMA IF NOT EXISTS idxstock")
+	// 1. Ensure schema exists
+	_, err := Pool.Exec(ctx, "CREATE SCHEMA IF NOT EXISTS idxstock")
 	if err != nil {
 		logrus.Fatalf("Failed to create schema idxstock: %v", err)
 	}
 
-	// 3. Get migration files
+	// 2. Create migrations tracking table
+	_, err = Pool.Exec(ctx, `
+		CREATE TABLE IF NOT EXISTS idxstock.schema_migrations (
+			filename VARCHAR(255) PRIMARY KEY,
+			applied_at TIMESTAMPTZ DEFAULT now()
+		)
+	`)
+	if err != nil {
+		logrus.Fatalf("Failed to create migration tracking table: %v", err)
+	}
+
+	// 3. Handle transition from old skip logic:
+	// If stocks table exists but migrations haven't been tracked, mark 000 and 001 as applied
+	var stocksExists bool
+	Pool.QueryRow(ctx, "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'idxstock' AND table_name = 'stocks')").Scan(&stocksExists)
+	if stocksExists {
+		Pool.Exec(ctx, "INSERT INTO idxstock.schema_migrations (filename) VALUES ('migrations/000_board_type.sql'), ('migrations/001_create_stocks_table.sql') ON CONFLICT DO NOTHING")
+	}
+
+	// 4. Get migration files
 	files, err := filepath.Glob("migrations/*.sql")
 	if err != nil {
 		logrus.Fatalf("Failed to read migrations directory: %v", err)
@@ -77,6 +77,18 @@ func Migrate() {
 	sort.Strings(files)
 
 	for _, file := range files {
+		// Check if already applied
+		var applied bool
+		err = Pool.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM idxstock.schema_migrations WHERE filename = $1)", file).Scan(&applied)
+		if err != nil {
+			logrus.Errorf("Failed to check migration status for %s: %v", file, err)
+			continue
+		}
+
+		if applied {
+			continue
+		}
+
 		logrus.Infof("Running migration: %s", file)
 		content, err := os.ReadFile(file)
 		if err != nil {
@@ -87,7 +99,13 @@ func Migrate() {
 		if err != nil {
 			logrus.Fatalf("Failed to execute migration %s: %v", file, err)
 		}
+
+		// Mark as applied
+		_, err = Pool.Exec(ctx, "INSERT INTO idxstock.schema_migrations (filename) VALUES ($1)", file)
+		if err != nil {
+			logrus.Fatalf("Failed to record migration %s: %v", file, err)
+		}
 	}
 
-	logrus.Info("Migrations completed successfully")
+	logrus.Info("Migrations synchronization completed")
 }
