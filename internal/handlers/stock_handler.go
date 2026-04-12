@@ -93,3 +93,15 @@ func (h *StockHandler) SyncIDHandler(c fiber.Ctx) error {
 
 	return c.JSON(stocks)
 }
+
+func (h *StockHandler) SyncStockDetailHandler(c fiber.Ctx) error {
+	stocks, err := h.usecase.SyncStockDetail(c.Context())
+	if err != nil {
+		logrus.Errorf("Failed to sync stock details: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return c.JSON(stocks)
+}

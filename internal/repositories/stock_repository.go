@@ -13,6 +13,7 @@ import (
 type StockRepository interface {
 	BatchInsertStocks(ctx context.Context, stocks []models.Stock) error
 	UpdateStockIDs(ctx context.Context, data []models.PasardanaStock) ([]models.StockResponse, error)
+	UpsertStocksDetail(ctx context.Context, data []models.PasardanaStockDetail) ([]models.StockResponse, error)
 }
 
 type stockRepository struct {
@@ -139,6 +140,94 @@ func (r *stockRepository) UpdateStockIDs(ctx context.Context, data []models.Pasa
 	}
 
 	logrus.Debugf("Successfully updated %d stock IDs", len(updatedStocks))
+
+	return updatedStocks, nil
+}
+
+func (r *stockRepository) UpsertStocksDetail(ctx context.Context, data []models.PasardanaStockDetail) ([]models.StockResponse, error) {
+	if len(data) == 0 {
+		return make([]models.StockResponse, 0), nil
+	}
+
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	query := `
+		INSERT INTO idxstock.stocks (
+			id, code, name, listing_date, total_employees, annual_dividend, 
+			general_information, founding_date, sector_id, sub_sector_id, 
+			industry_id, sub_industry_id, last_modified
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now())
+		ON CONFLICT (code) DO UPDATE SET
+			id = EXCLUDED.id,
+			name = EXCLUDED.name,
+			listing_date = EXCLUDED.listing_date,
+			total_employees = EXCLUDED.total_employees,
+			annual_dividend = EXCLUDED.annual_dividend,
+			general_information = EXCLUDED.general_information,
+			founding_date = EXCLUDED.founding_date,
+			sector_id = EXCLUDED.sector_id,
+			sub_sector_id = EXCLUDED.sub_sector_id,
+			industry_id = EXCLUDED.industry_id,
+			sub_industry_id = EXCLUDED.sub_industry_id,
+			last_modified = now()
+		WHERE 
+			stocks.id IS DISTINCT FROM EXCLUDED.id OR
+			stocks.name IS DISTINCT FROM EXCLUDED.name OR
+			stocks.listing_date IS DISTINCT FROM EXCLUDED.listing_date OR
+			stocks.total_employees IS DISTINCT FROM EXCLUDED.total_employees OR
+			stocks.annual_dividend IS DISTINCT FROM EXCLUDED.annual_dividend OR
+			stocks.general_information IS DISTINCT FROM EXCLUDED.general_information OR
+			stocks.founding_date IS DISTINCT FROM EXCLUDED.founding_date OR
+			stocks.sector_id IS DISTINCT FROM EXCLUDED.sector_id OR
+			stocks.sub_sector_id IS DISTINCT FROM EXCLUDED.sub_sector_id OR
+			stocks.industry_id IS DISTINCT FROM EXCLUDED.industry_id OR
+			stocks.sub_industry_id IS DISTINCT FROM EXCLUDED.sub_industry_id
+		RETURNING id, code, name
+	`
+
+	batch := &pgx.Batch{}
+	for _, s := range data {
+		batch.Queue(query,
+			s.Id, s.Code, s.Name, s.ListingDate, s.TotalEmployees, s.AnnualDividend,
+			s.GeneralInformation, s.FoundingDate, s.FkNewSectorId, s.FkNewSubSectorId,
+			s.FkNewIndustryId, s.FkNewSubIndustryId,
+		)
+	}
+
+	br := tx.SendBatch(ctx, batch)
+	defer br.Close()
+
+	updatedStocks := make([]models.StockResponse, 0)
+	for range data {
+		rows, err := br.Query()
+		if err != nil {
+			// Skip errors for individual stocks to continue with others
+			continue
+		}
+
+		for rows.Next() {
+			var sr models.StockResponse
+			if err := rows.Scan(&sr.Id, &sr.Code, &sr.Name); err == nil {
+				updatedStocks = append(updatedStocks, sr)
+			}
+		}
+		rows.Close()
+	}
+
+	if err := br.Close(); err != nil {
+		return nil, fmt.Errorf("failed to close batch result: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	logrus.Debugf("Successfully upserted %d stock details", len(updatedStocks))
 
 	return updatedStocks, nil
 }

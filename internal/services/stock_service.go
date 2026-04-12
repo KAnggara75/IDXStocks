@@ -45,10 +45,11 @@ func (s *stockService) ParseExcel(file io.Reader) ([]models.Stock, error) {
 		sharesStr := strings.ReplaceAll(row[4], ",", "")
 		shares, _ := strconv.ParseInt(sharesStr, 10, 64)
 
+		listingDate := parseIndoDate(row[3])
 		stock := models.Stock{
 			Code:         row[1],
 			CompanyName:  row[2],
-			ListingDate:  parseIndoDate(row[3]),
+			ListingDate:  &listingDate,
 			ListingBoard: row[5],
 			Shares:       shares,
 		}
