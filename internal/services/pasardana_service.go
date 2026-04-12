@@ -12,6 +12,8 @@ type PasardanaService interface {
 	FetchStockIDs() ([]models.PasardanaStock, error)
 	FetchSectors() ([]models.PasardanaSector, error)
 	FetchStockSearchResult() ([]models.PasardanaSearchResult, error)
+	FetchNewSectors() ([]models.PasardanaNewSector, error)
+	FetchNewSubSectors() ([]models.PasardanaNewSubSector, error)
 }
 
 type pasardanaService struct{}
@@ -41,6 +43,24 @@ func (s *pasardanaService) FetchSectors() ([]models.PasardanaSector, error) {
 func (s *pasardanaService) FetchStockSearchResult() ([]models.PasardanaSearchResult, error) {
 	url := "https://www.pasardana.id/api/StockSearchResult/GetAll"
 	var results []models.PasardanaSearchResult
+	if err := s.fetch(url, &results); err != nil {
+		return nil, err
+	}
+	return results, nil
+}
+
+func (s *pasardanaService) FetchNewSectors() ([]models.PasardanaNewSector, error) {
+	url := "https://www.pasardana.id/api/StockNewSector/GetAll"
+	var results []models.PasardanaNewSector
+	if err := s.fetch(url, &results); err != nil {
+		return nil, err
+	}
+	return results, nil
+}
+
+func (s *pasardanaService) FetchNewSubSectors() ([]models.PasardanaNewSubSector, error) {
+	url := "https://www.pasardana.id/api/StockNewSubSector/GetAll"
+	var results []models.PasardanaNewSubSector
 	if err := s.fetch(url, &results); err != nil {
 		return nil, err
 	}
