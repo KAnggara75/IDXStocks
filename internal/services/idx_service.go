@@ -3,6 +3,7 @@ package services
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -58,10 +59,9 @@ func (s *idxService) FetchDelistedStocks(year, month int) ([]models.IdxDelistedS
 	logrus.Infof("IDX Response Status: %d", resp.StatusCode)
 
 	if resp.StatusCode != http.StatusOK {
-		// Log response body if possible to diagnose errors (like 403 WAF)
-		var bodyMsg interface{}
-		_ = json.NewDecoder(resp.Body).Decode(&bodyMsg)
-		logrus.Errorf("IDX Error Response: %v", bodyMsg)
+		// Read raw body if not OK to diagnose non-JSON errors (like Cloudflare HTML)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		logrus.Errorf("IDX Error Response Body: %s", string(bodyBytes))
 		return nil, fmt.Errorf("IDX API returned status: %d", resp.StatusCode)
 	}
 
