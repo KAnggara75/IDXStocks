@@ -41,45 +41,44 @@ func (u *sectorUsecase) SyncSectors(ctx context.Context) ([]models.SectorRespons
 }
 
 func (u *sectorUsecase) SyncNewSectors(ctx context.Context) (*models.SectorSyncNewResponse, error) {
-	results, err := u.pasardanaService.FetchStockSearchResult()
+	// Sync Sectors
+	pasardanaSectors, err := u.pasardanaService.FetchNewSectors()
 	if err != nil {
 		return nil, err
 	}
 
-	// Deduplicate sectors and sub-sectors
-	sectorMap := make(map[int]models.SectorNew)
-	subSectorMap := make(map[int]models.SubSector)
-
-	for _, res := range results {
-		if res.NewSectorId > 0 {
-			sectorMap[res.NewSectorId] = models.SectorNew{
-				Id:   res.NewSectorId,
-				Name: res.NewSectorName,
-			}
-		}
-		if res.NewSubSectorId > 0 {
-			subSectorMap[res.NewSubSectorId] = models.SubSector{
-				Id:       res.NewSubSectorId,
-				Name:     res.NewSubSectorName,
-				SectorId: res.NewSectorId,
-			}
-		}
+	sectors := make([]models.SectorNew, 0, len(pasardanaSectors))
+	for _, ps := range pasardanaSectors {
+		sectors = append(sectors, models.SectorNew{
+			Id:          ps.Id,
+			Code:        ps.Code,
+			Name:        ps.Name,
+			NameEn:      ps.NameEn,
+			Description: ps.Description,
+		})
 	}
 
-	sectors := make([]models.SectorNew, 0, len(sectorMap))
-	for _, s := range sectorMap {
-		sectors = append(sectors, s)
-	}
-
-	subSectors := make([]models.SubSector, 0, len(subSectorMap))
-	for _, sub := range subSectorMap {
-		subSectors = append(subSectors, sub)
-	}
-
-	// Upsert sectors first due to FK constraint
 	updatedSectors, err := u.searchRepo.UpsertNewSectors(ctx, sectors)
 	if err != nil {
 		return nil, err
+	}
+
+	// Sync SubSectors
+	pasardanaSubSectors, err := u.pasardanaService.FetchNewSubSectors()
+	if err != nil {
+		return nil, err
+	}
+
+	subSectors := make([]models.SubSector, 0, len(pasardanaSubSectors))
+	for _, ps := range pasardanaSubSectors {
+		subSectors = append(subSectors, models.SubSector{
+			Id:          ps.Id,
+			SectorId:    ps.FkNewSectorId,
+			Code:        ps.Code,
+			Name:        ps.Name,
+			NameEn:      ps.NameEn,
+			Description: ps.Description,
+		})
 	}
 
 	updatedSubSectors, err := u.searchRepo.UpsertNewSubSectors(ctx, subSectors)
