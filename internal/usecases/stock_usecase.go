@@ -8,6 +8,7 @@ import (
 	"github.com/KAnggara75/IDXStocks/internal/repositories"
 	"github.com/KAnggara75/IDXStocks/internal/services"
 	"github.com/sirupsen/logrus"
+	"sync"
 )
 
 type StockUsecase interface {
@@ -69,30 +70,57 @@ func (u *stockUsecase) SyncStockDetail(ctx context.Context) ([]models.StockRespo
 		return nil, err
 	}
 
-	allUpdated := make([]models.StockResponse, 0)
+	totalStocks := len(simpleStocks)
+	logrus.Infof("Starting parallel sync for %d stocks", totalStocks)
 
-	// 2. Loop to get detail and immediately upsert
-	for _, s := range simpleStocks {
-		logrus.Debugf("Fetching and syncing detail for stock: %s", s.Code)
-		detail, err := u.pasardanaService.FetchStockDetailByCode(s.Code)
-		if err != nil {
-			logrus.Errorf("Failed to fetch detail for %s: %v", s.Code, err)
-			continue
-		}
+	// 2. Setup Worker Pool
+	const numWorkers = 20
+	jobs := make(chan models.PasardanaStock, totalStocks)
+	results := make(chan []models.StockResponse, totalStocks)
+	
+	var wg sync.WaitGroup
 
-		if detail != nil {
-			// Immediately upsert to db
-			updated, err := u.repo.UpsertStocksDetail(ctx, []models.PasardanaStockDetail{*detail})
-			if err != nil {
-				logrus.Errorf("Failed to upsert detail for %s: %v", s.Code, err)
-				continue
+	// Start workers
+	for w := 1; w <= numWorkers; w++ {
+		wg.Add(1)
+		go func(workerID int) {
+			defer wg.Done()
+			for s := range jobs {
+				detail, err := u.pasardanaService.FetchStockDetailByCode(s.Code)
+				if err != nil {
+					logrus.Errorf("[Worker %d] Failed to fetch %s: %v", workerID, s.Code, err)
+					continue
+				}
+
+				if detail != nil {
+					updated, err := u.repo.UpsertStocksDetail(context.Background(), []models.PasardanaStockDetail{*detail})
+					if err != nil {
+						logrus.Errorf("[Worker %d] Failed to upsert %s: %v", workerID, s.Code, err)
+						continue
+					}
+					results <- updated
+				}
 			}
-
-			if len(updated) > 0 {
-				allUpdated = append(allUpdated, updated...)
-			}
-		}
+		}(w)
 	}
 
+	// Send jobs
+	for _, s := range simpleStocks {
+		jobs <- s
+	}
+	close(jobs)
+
+	// Wait for workers in a separate goroutine to close results channel
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	allUpdated := make([]models.StockResponse, 0)
+	for res := range results {
+		allUpdated = append(allUpdated, res...)
+	}
+
+	logrus.Infof("Parallel sync completed. Total updated: %d", len(allUpdated))
 	return allUpdated, nil
 }
