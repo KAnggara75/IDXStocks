@@ -1,0 +1,24 @@
+# Git
+.git
+.gitignore
+
+# Go
+bin/
+obj/
+*.test
+*.out
+cover.out
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Project specific
+tmp/
+*.xlsx
+*.xls
+issue.md
+Dockerfile
+.dockerignore
