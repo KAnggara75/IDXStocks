@@ -1,0 +1,25 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+
+  dockerbuild2:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+    name: Build and Push to Docker Hub
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - uses: KAnggara/DevOps/dockerbuild@v0.1.7
+        with:
+          dockerfile_path: Dockerfile
+          registry: docker.io
+          image_name: kanggara75/idxstock
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
