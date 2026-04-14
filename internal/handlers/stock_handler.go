@@ -98,12 +98,12 @@ func (h *StockHandler) SyncIDHandler(c fiber.Ctx) error {
 
 func (h *StockHandler) SyncStockDetailHandler(c fiber.Ctx) error {
 	// Run synchronization in background
-	go func() {
-		_, err := h.usecase.SyncStockDetail(context.Background())
+	go func(ctx context.Context) {
+		_, err := h.usecase.SyncStockDetail(ctx)
 		if err != nil {
 			logrus.Errorf("Background stock sync failed: %v", err)
 		}
-	}()
+	}(context.WithoutCancel(c.Context()))
 
 	return c.JSON(fiber.Map{
 		"status":  "success",
