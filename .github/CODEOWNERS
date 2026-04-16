@@ -1,0 +1,39 @@
+# The CODEOWNERS file is used by GitHub to automate assigning code reviews, see
+# [1] and [2]. We also use it in our internal tooling (see [3]) to automate test
+# failure issue routing. To do this efficiently, we are enforcing a few rules in
+# this file via linting. They are:
+#
+# - every file under ./pkg has to have at least one owner, and each owner must
+#   be present in TEAMS.yaml (either as a map key or an alias).
+# - you can opt out of GitHub-requested code review assignments (while
+#   maintaining team ownership) prefixing the line with `#!`.
+#   (This will hide the line from GitHub, but our internal tooling continues to
+#   parse it).
+#   Note that it is customary also to use a team name with `-noreview` suffix in
+#   the lines that start with `#!` (the suffix is trimmed in codeowners package).
+# - there is a special team @cockroachdb/unowned (only to be used with #! prefix as
+#   to not confuse Github) for the rare situations in which a file has no canonical owner.
+#   Please use this sparingly.
+#
+#   TODO(test-eng): it would be good to lint that following a `#!` marker all mentioned
+#   teams match @cockroachdb/{unowned,*-noreview}.
+#
+# Remember, *the last rule to match wins*, and you need a trailing slash to get
+# recursive ownership of a directory.
+#
+# When you send a PR to update this file, please look at the "Files" tab and
+# fix any errors Github reports.
+#
+# [1]: https://github.com/blog/2392-introducing-code-owners
+# [2]: https://help.github.com/articles/about-codeowners/
+# [3]: pkg/internal/codeowners
+
+#/datasets/csv   @wildangunawan @kanggara75 #Unknown owner on line 31: make sure @wildangunawan exists and has write access to the repository
+/datasets/csv   @KAnggara75
+/datasets       @KAnggara75
+/datasets/sql   @KAnggara75
+
+/build          @KAnggara75
+/build/cli      @KAnggara75
+/build/deploy   @KAnggara75
+/build/package  @KAnggara75

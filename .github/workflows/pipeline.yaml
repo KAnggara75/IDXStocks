@@ -46,6 +46,5 @@ jobs:
       - uses: KAnggara/DevOps/dockerbuild@v0.1.7
         with:
           registry: ghcr.io
-          image_name: kanggara75/idxstock
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}

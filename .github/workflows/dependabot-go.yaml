@@ -1,0 +1,34 @@
+name: "Dependabot: Update go.sum"
+
+on:
+  pull_request:
+    paths:
+      - '**/go.mod'
+
+permissions:
+  contents: write
+
+jobs:
+  update-go-sum:
+    name: "Update go.sum"
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Dependabot PR
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.4'
+      - name: Update Go sum
+        run: |
+          go mod tidy
+          git add go.sum
+          git config --global user.name 'dependabot[bot]'
+          git config --global user.email 'dependabot[bot]@users.noreply.github.com'
+          git commit --amend --no-edit || echo "No changes to commit"
+          git push --force

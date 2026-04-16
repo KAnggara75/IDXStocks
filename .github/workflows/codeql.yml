@@ -1,0 +1,35 @@
+name: "CodeQL Analysis (Go)"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: '33 9 * * 0'
+
+permissions:
+  security-events: write
+  packages: read
+  actions: read
+  contents: read
+
+jobs:
+  analyze-go:
+    name: Analyze Go code
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL for Go
+        uses: github/codeql-action/init@v3
+        with:
+          languages: go
+          build-mode: autobuild
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:go"
