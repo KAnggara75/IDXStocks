@@ -3,7 +3,7 @@ name: "Dependabot: Update go.sum"
 on:
   pull_request:
     paths:
-      - '**/go.mod'
+      - 'go.mod'
 
 permissions:
   contents: write
@@ -15,15 +15,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Dependabot PR
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6.0.2
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.ref }}
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6.4.0
         with:
-          go-version: '1.24.4'
+          go-version: "1.26.2"
+          cache: true
       - name: Update Go sum
         run: |
           go mod tidy
