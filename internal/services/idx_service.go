@@ -43,9 +43,8 @@ func (s *idxService) FetchDelistedStocks(year, month int) ([]models.IdxDelistedS
 	req.Header.Set("sec-ch-ua-mobile", "?0")
 	req.Header.Set("sec-ch-ua-platform", `"Windows"`)
 
-	// Log request details as per user request
+	// Log request URL only
 	logrus.Infof("Requesting IDX: %s", url)
-	logrus.Debugf("Request Headers: %v", req.Header)
 
 	client := &http.Client{
 		Timeout: 30 * time.Second,
@@ -63,7 +62,7 @@ func (s *idxService) FetchDelistedStocks(year, month int) ([]models.IdxDelistedS
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
-	logrus.Debugf("IDX Response Body: %s", string(bodyBytes))
+	logrus.Debugf("IDX Response received, length: %d bytes", len(bodyBytes))
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("IDX API returned status: %d", resp.StatusCode)
