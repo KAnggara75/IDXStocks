@@ -60,6 +60,7 @@ func Setup(app *fiber.App) {
 	v1.Put("/sectors/sync", sectorHandler.SyncNewSectorsHandler)
 	v1.Put("/industries/sync", industryHandler.IndustrySyncHandler)
 	v1.Get("/broker/sync", brokerHandler.SyncBrokerActivityHandler)
+	v1.Put("/partition/broker-activity", brokerHandler.ManagePartitionsHandler)
 
 	// Asset Routes
 	v1.Get("/assets/logos/companies/:code", assetHandler.GetCompanyLogo)

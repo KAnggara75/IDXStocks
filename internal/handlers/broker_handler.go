@@ -42,3 +42,23 @@ func (h *BrokerHandler) SyncBrokerActivityHandler(c fiber.Ctx) error {
 
 	return c.JSON(activities)
 }
+
+func (h *BrokerHandler) ManagePartitionsHandler(c fiber.Ctx) error {
+	resp, err := h.usecase.ManagePartitions(c.Context())
+	if err != nil {
+		logrus.Errorf("Partition management error: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	status := fiber.StatusOK
+	if resp.PartitionsCreated > 0 {
+		status = fiber.StatusCreated
+	}
+
+	return c.Status(status).JSON(fiber.Map{
+		"status": "success",
+		"data":   resp,
+	})
+}
