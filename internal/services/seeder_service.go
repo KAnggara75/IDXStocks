@@ -27,16 +27,6 @@ func NewSeederService(brokerRepo repositories.BrokerRepository) SeederService {
 }
 
 func (s *seederService) SeedBrokersData(ctx context.Context) error {
-	isEmpty, err := s.brokerRepo.IsBrokersTableEmpty(ctx)
-	if err != nil {
-		return err
-	}
-
-	if !isEmpty {
-		logrus.Debug("Brokers table is not empty, skipping seeder")
-		return nil
-	}
-
 	logrus.Info("Starting brokers data seeding...")
 
 	url := "https://raw.githubusercontent.com/KAnggara75/IDXStock/refs/heads/main/testData/broker.json"

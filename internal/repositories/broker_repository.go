@@ -11,7 +11,6 @@ import (
 )
 
 type BrokerRepository interface {
-	IsBrokersTableEmpty(ctx context.Context) (bool, error)
 	BatchInsertBrokers(ctx context.Context, brokers []models.Broker) error
 }
 
@@ -23,15 +22,6 @@ func NewBrokerRepository(pool *pgxpool.Pool) BrokerRepository {
 	return &brokerRepository{
 		pool: pool,
 	}
-}
-
-func (r *brokerRepository) IsBrokersTableEmpty(ctx context.Context) (bool, error) {
-	var count int64
-	err := r.pool.QueryRow(ctx, "SELECT COUNT(*) FROM brokers").Scan(&count)
-	if err != nil {
-		return false, fmt.Errorf("failed to check if brokers table is empty: %w", err)
-	}
-	return count == 0, nil
 }
 
 func (r *brokerRepository) BatchInsertBrokers(ctx context.Context, brokers []models.Broker) error {
@@ -62,7 +52,7 @@ func (r *brokerRepository) BatchInsertBrokers(ctx context.Context, brokers []mod
 	br := tx.SendBatch(ctx, batch)
 	defer br.Close()
 
-	for i := 0; i < len(brokers); i++ {
+	for i := range brokers {
 		_, err := br.Exec()
 		if err != nil {
 			return fmt.Errorf("failed to execute batch insert for broker %s: %w", brokers[i].Code, err)
