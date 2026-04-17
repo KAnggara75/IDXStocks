@@ -70,16 +70,22 @@ func (u *brokerUsecase) SyncBrokerActivity(ctx context.Context, token string, pa
 	}
 
 	var errs []error
+	var insertedRecords []models.BrokerActivity
 	for _, rec := range records {
-		if err := u.repo.UpsertBrokerActivity(ctx, rec); err != nil {
-			logrus.Errorf("Error upserting record: %v", err)
+		inserted, err := u.repo.UpsertBrokerActivity(ctx, rec)
+		if err != nil {
+			logrus.Errorf("Error inserting record: %v", err)
 			errs = append(errs, err)
+			continue
+		}
+		if inserted {
+			insertedRecords = append(insertedRecords, rec)
 		}
 	}
 
 	if len(errs) > 0 {
-		return records, errors.Join(errs...)
+		return insertedRecords, errors.Join(errs...)
 	}
 
-	return records, nil
+	return insertedRecords, nil
 }
