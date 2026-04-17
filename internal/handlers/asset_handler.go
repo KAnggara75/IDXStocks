@@ -52,7 +52,7 @@ func (h *AssetHandler) GetCompanyLogo(c fiber.Ctx) error {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if resp.StatusCode == http.StatusNotFound {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 				"error": "logo not found",
