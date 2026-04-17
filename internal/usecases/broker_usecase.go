@@ -33,7 +33,7 @@ func NewBrokerUsecase(repo repositories.BrokerActivityRepository, brokerService 
 func (u *brokerUsecase) SyncBrokerActivity(ctx context.Context, token string, params models.SyncBrokerActivityParams) ([]models.BrokerActivity, error) {
 	exodusResp, err := u.brokerService.FetchBrokerActivity(ctx, token, params)
 	if err != nil {
-		return nil, err
+		return make([]models.BrokerActivity, 0), err
 	}
 
 	var records []models.BrokerActivity
@@ -70,7 +70,7 @@ func (u *brokerUsecase) SyncBrokerActivity(ctx context.Context, token string, pa
 	}
 
 	var errs []error
-	var insertedRecords []models.BrokerActivity
+	insertedRecords := make([]models.BrokerActivity, 0)
 	for _, rec := range records {
 		inserted, err := u.repo.InsertBrokerActivity(ctx, rec)
 		if err != nil {
