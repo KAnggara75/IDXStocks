@@ -53,11 +53,17 @@ func (u *brokerUsecase) SyncBrokerActivity(ctx context.Context, token string, pa
 
 	// Map Buy items
 	for _, item := range exodusResp.Data.BrokerActivityTransaction.BrokersBuy {
+		if len(item.StockCode) > 4 {
+			continue
+		}
 		records = append(records, mapItem(item, "buy"))
 	}
 
 	// Map Sell items
 	for _, item := range exodusResp.Data.BrokerActivityTransaction.BrokersSell {
+		if len(item.StockCode) > 4 {
+			continue
+		}
 		records = append(records, mapItem(item, "sell"))
 	}
 
