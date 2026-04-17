@@ -11,8 +11,8 @@ import (
 )
 
 type BrokerActivityRepository interface {
-	BatchUpsertBrokerActivity(ctx context.Context, records []models.BrokerActivity) error
-	UpsertBrokerActivity(ctx context.Context, record models.BrokerActivity) (bool, error)
+	BatchInsertBrokerActivity(ctx context.Context, records []models.BrokerActivity) error
+	InsertBrokerActivity(ctx context.Context, record models.BrokerActivity) (bool, error)
 }
 
 type brokerActivityRepository struct {
@@ -25,7 +25,7 @@ func NewBrokerActivityRepository(pool *pgxpool.Pool) BrokerActivityRepository {
 	}
 }
 
-func (r *brokerActivityRepository) BatchUpsertBrokerActivity(ctx context.Context, records []models.BrokerActivity) error {
+func (r *brokerActivityRepository) BatchInsertBrokerActivity(ctx context.Context, records []models.BrokerActivity) error {
 	if len(records) == 0 {
 		return nil
 	}
@@ -86,7 +86,7 @@ func (r *brokerActivityRepository) BatchUpsertBrokerActivity(ctx context.Context
 	return nil
 }
 
-func (r *brokerActivityRepository) UpsertBrokerActivity(ctx context.Context, rec models.BrokerActivity) (bool, error) {
+func (r *brokerActivityRepository) InsertBrokerActivity(ctx context.Context, rec models.BrokerActivity) (bool, error) {
 	query := `
 		INSERT INTO idxstock.broker_activity (
 			broker_code, stock_code, date, side, lot, value, avg_price, freq, updated_at
