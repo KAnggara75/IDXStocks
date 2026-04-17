@@ -15,20 +15,24 @@ func Setup(app *fiber.App) {
 	sectorSearchRepo := repositories.NewSectorSearchRepository(database.Pool)
 	industryRepo := repositories.NewIndustryRepository(database.Pool)
 	historyRepo := repositories.NewHistoryRepository(database.Pool)
+	brokerActRepo := repositories.NewBrokerActivityRepository(database.Pool)
 
 	stockService := services.NewStockService()
 	pasardanaService := services.NewPasardanaService()
 	idxService := services.NewIdxService()
+	brokerService := services.NewBrokerService()
 
 	stockUsecase := usecases.NewStockUsecase(stockRepo, stockService, pasardanaService, idxService)
 	industryUsecase := usecases.NewIndustryUsecase(industryRepo, pasardanaService)
 	sectorUsecase := usecases.NewSectorUsecase(sectorSearchRepo, pasardanaService)
 	historyUsecase := usecases.NewHistoryUsecase(historyRepo, stockRepo, pasardanaService, idxService)
+	brokerUsecase := usecases.NewBrokerUsecase(brokerActRepo, brokerService)
 
 	stockHandler := handlers.NewStockHandler(stockUsecase)
 	industryHandler := handlers.NewIndustryHandler(industryUsecase)
 	sectorHandler := handlers.NewSectorHandler(sectorUsecase)
 	historyHandler := handlers.NewHistoryHandler(historyUsecase)
+	brokerHandler := handlers.NewBrokerHandler(brokerUsecase)
 	assetHandler := handlers.NewAssetHandler()
 
 	app.Get("/health", func(c fiber.Ctx) error {
@@ -55,6 +59,7 @@ func Setup(app *fiber.App) {
 	v1.Get("/stocks/:code/history", historyHandler.GetStockHistoryHandler)
 	v1.Put("/sectors/sync", sectorHandler.SyncNewSectorsHandler)
 	v1.Put("/industries/sync", industryHandler.IndustrySyncHandler)
+	v1.Get("/broker/sync", brokerHandler.SyncBrokerActivityHandler)
 
 	// Asset Routes
 	v1.Get("/assets/logos/companies/:code", assetHandler.GetCompanyLogo)
