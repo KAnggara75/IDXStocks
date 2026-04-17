@@ -36,7 +36,7 @@ func (r *brokerRepository) BatchInsertBrokers(ctx context.Context, brokers []mod
 	defer tx.Rollback(ctx)
 
 	query := `
-		INSERT INTO brokers (
+		INSERT INTO idxstock.brokers (
 			code, name, investor_type, total_value, net_value, buy_value,
 			sell_value, total_volume, total_frequency, broker_group
 		)

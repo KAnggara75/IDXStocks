@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS brokers (
+CREATE TABLE IF NOT EXISTS idxstock.brokers (
     code VARCHAR PRIMARY KEY,
     name VARCHAR NOT NULL,
     investor_type VARCHAR,
