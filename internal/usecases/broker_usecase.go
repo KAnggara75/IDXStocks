@@ -6,6 +6,8 @@ import (
 	"math"
 	"time"
 
+	"strings"
+
 	"github.com/KAnggara75/IDXStocks/internal/models"
 	"github.com/KAnggara75/IDXStocks/internal/repositories"
 	"github.com/KAnggara75/IDXStocks/internal/services"
@@ -53,7 +55,7 @@ func (u *brokerUsecase) SyncBrokerActivity(ctx context.Context, token string, pa
 
 	// Map Buy items
 	for _, item := range exodusResp.Data.BrokerActivityTransaction.BrokersBuy {
-		if len(item.StockCode) > 4 {
+		if len(item.StockCode) > 4 || strings.HasPrefix(item.StockCode, "X") {
 			continue
 		}
 		records = append(records, mapItem(item, "buy"))
@@ -61,7 +63,7 @@ func (u *brokerUsecase) SyncBrokerActivity(ctx context.Context, token string, pa
 
 	// Map Sell items
 	for _, item := range exodusResp.Data.BrokerActivityTransaction.BrokersSell {
-		if len(item.StockCode) > 4 {
+		if len(item.StockCode) > 4 || strings.HasPrefix(item.StockCode, "X") {
 			continue
 		}
 		records = append(records, mapItem(item, "sell"))
