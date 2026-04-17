@@ -41,3 +41,14 @@ type SyncBrokerActivityParams struct {
 	MarketBoard     string `query:"market_board"`
 	InvestorType    string `query:"investor_type"`
 }
+
+type PartitionDetail struct {
+	Name   string `json:"name"`
+	Status string `json:"status"` // "created" or "exists"
+	Range  string `json:"range"`
+}
+
+type PartitionManagementResponse struct {
+	PartitionsCreated int               `json:"partitions_created"`
+	Details           []PartitionDetail `json:"details"`
+}

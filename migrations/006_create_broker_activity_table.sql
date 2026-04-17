@@ -1,7 +1,4 @@
--- Drop existing if exists to recreate with partitioning
-DROP TABLE IF EXISTS idxstock.broker_activity;
-
-CREATE TABLE idxstock.broker_activity (
+CREATE TABLE IF NOT EXISTS idxstock.broker_activity (
     broker_code VARCHAR NOT NULL REFERENCES idxstock.brokers(code),
     stock_code VARCHAR NOT NULL REFERENCES idxstock.stocks(code),
     date DATE NOT NULL,

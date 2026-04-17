@@ -13,6 +13,8 @@ import (
 type BrokerActivityRepository interface {
 	BatchInsertBrokerActivity(ctx context.Context, records []models.BrokerActivity) error
 	InsertBrokerActivity(ctx context.Context, record models.BrokerActivity) (bool, error)
+	CheckPartitionExists(ctx context.Context, tableName string) (bool, error)
+	CreatePartition(ctx context.Context, tableName, startDate, endDate string) error
 }
 
 type brokerActivityRepository struct {
@@ -105,4 +107,35 @@ func (r *brokerActivityRepository) InsertBrokerActivity(ctx context.Context, rec
 	}
 
 	return ct.RowsAffected() > 0, nil
+}
+
+func (r *brokerActivityRepository) CheckPartitionExists(ctx context.Context, tableName string) (bool, error) {
+	query := `
+		SELECT EXISTS (
+			SELECT 1 FROM information_schema.tables
+			WHERE table_schema = 'idxstock' AND table_name = $1
+		)
+	`
+	var exists bool
+	err := r.pool.QueryRow(ctx, query, tableName).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("failed to check partition existence for %s: %w", tableName, err)
+	}
+	return exists, nil
+}
+
+func (r *brokerActivityRepository) CreatePartition(ctx context.Context, tableName, startDate, endDate string) error {
+	// DDL statements cannot use parameters for table names, so we use fmt.Sprintf
+	// We assume tableName is internally generated and safe.
+	query := fmt.Sprintf(`
+		CREATE TABLE idxstock.%s PARTITION OF idxstock.broker_activity
+		FOR VALUES FROM ('%s') TO ('%s')
+	`, tableName, startDate, endDate)
+
+	_, err := r.pool.Exec(ctx, query)
+	if err != nil {
+		return fmt.Errorf("failed to create partition %s [%s to %s]: %w", tableName, startDate, endDate, err)
+	}
+
+	return nil
 }
