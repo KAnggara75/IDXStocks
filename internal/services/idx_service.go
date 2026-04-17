@@ -18,10 +18,19 @@ type IdxService interface {
 	ParseIdxDate(dateStr string) (string, error)
 }
 
-type idxService struct{}
+type idxService struct {
+	client *http.Client
+}
 
-func NewIdxService() IdxService {
-	return &idxService{}
+func NewIdxService(client *http.Client) IdxService {
+	if client == nil {
+		client = &http.Client{
+			Timeout: 30 * time.Second,
+		}
+	}
+	return &idxService{
+		client: client,
+	}
 }
 
 func (s *idxService) FetchDelistedStocks(year, month int) ([]models.IdxDelistedStock, error) {
@@ -46,11 +55,8 @@ func (s *idxService) FetchDelistedStocks(year, month int) ([]models.IdxDelistedS
 	// Log request URL only
 	logrus.Infof("Requesting IDX: %s", url)
 
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-	}
 	// #nosec G107
-	resp, err := client.Do(req)
+	resp, err := s.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch from IDX: %w", err)
 	}
@@ -95,11 +101,8 @@ func (s *idxService) FetchStockSummary(year, month, day int) ([]models.IdxSummar
 
 	logrus.Infof("Requesting IDX Summary: %s", url)
 
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-	}
 	// #nosec G107
-	resp, err := client.Do(req)
+	resp, err := s.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch from IDX: %w", err)
 	}

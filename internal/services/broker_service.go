@@ -15,10 +15,19 @@ type BrokerService interface {
 	FetchBrokerActivity(ctx context.Context, token string, params models.SyncBrokerActivityParams) (*models.ExodusBrokerActivityResponse, error)
 }
 
-type brokerService struct{}
+type brokerService struct {
+	client *http.Client
+}
 
-func NewBrokerService() BrokerService {
-	return &brokerService{}
+func NewBrokerService(client *http.Client) BrokerService {
+	if client == nil {
+		client = &http.Client{
+			Timeout: 30 * time.Second,
+		}
+	}
+	return &brokerService{
+		client: client,
+	}
 }
 
 func (s *brokerService) FetchBrokerActivity(ctx context.Context, token string, params models.SyncBrokerActivityParams) (*models.ExodusBrokerActivityResponse, error) {
@@ -61,11 +70,7 @@ func (s *brokerService) FetchBrokerActivity(ctx context.Context, token string, p
 	}
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36")
 
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-	}
-
-	resp, err := client.Do(req)
+	resp, err := s.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch from Exodus: %w", err)
 	}

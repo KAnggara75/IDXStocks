@@ -20,10 +20,19 @@ type PasardanaService interface {
 	FetchStockHistory(year, month, day int) ([]models.PasardanaHistoryResponse, error)
 }
 
-type pasardanaService struct{}
+type pasardanaService struct {
+	client *http.Client
+}
 
-func NewPasardanaService() PasardanaService {
-	return &pasardanaService{}
+func NewPasardanaService(client *http.Client) PasardanaService {
+	if client == nil {
+		client = &http.Client{
+			Timeout: 30 * time.Second,
+		}
+	}
+	return &pasardanaService{
+		client: client,
+	}
 }
 
 func (s *pasardanaService) FetchStockIDs() ([]models.PasardanaStock, error) {
@@ -94,12 +103,8 @@ func (s *pasardanaService) fetch(url string, target any) error {
 	req.Header.Set("Referer", "https://pasardana.id/stock/search")
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0")
 
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-	}
-
 	// #nosec G107
-	resp, err := client.Do(req)
+	resp, err := s.client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to fetch from pasardana API: %w", err)
 	}

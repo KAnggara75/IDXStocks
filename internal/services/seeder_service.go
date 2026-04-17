@@ -18,11 +18,18 @@ type SeederService interface {
 
 type seederService struct {
 	brokerRepo repositories.BrokerRepository
+	client     *http.Client
 }
 
-func NewSeederService(brokerRepo repositories.BrokerRepository) SeederService {
+func NewSeederService(brokerRepo repositories.BrokerRepository, client *http.Client) SeederService {
+	if client == nil {
+		client = &http.Client{
+			Timeout: 10 * time.Second,
+		}
+	}
 	return &seederService{
 		brokerRepo: brokerRepo,
+		client:     client,
 	}
 }
 
@@ -31,11 +38,7 @@ func (s *seederService) SeedBrokersData(ctx context.Context) error {
 
 	url := "https://raw.githubusercontent.com/KAnggara75/IDXStock/refs/heads/main/testData/broker.json"
 
-	client := &http.Client{
-		Timeout: 10 * time.Second,
-	}
-
-	resp, err := client.Get(url)
+	resp, err := s.client.Get(url)
 	if err != nil {
 		return fmt.Errorf("failed to fetch broker data: %w", err)
 	}

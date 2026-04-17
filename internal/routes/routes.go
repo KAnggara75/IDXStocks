@@ -18,9 +18,9 @@ func Setup(app *fiber.App) {
 	brokerActRepo := repositories.NewBrokerActivityRepository(database.Pool)
 
 	stockService := services.NewStockService()
-	pasardanaService := services.NewPasardanaService()
-	idxService := services.NewIdxService()
-	brokerService := services.NewBrokerService()
+	pasardanaService := services.NewPasardanaService(nil)
+	idxService := services.NewIdxService(nil)
+	brokerService := services.NewBrokerService(nil)
 
 	stockUsecase := usecases.NewStockUsecase(stockRepo, stockService, pasardanaService, idxService)
 	industryUsecase := usecases.NewIndustryUsecase(industryRepo, pasardanaService)

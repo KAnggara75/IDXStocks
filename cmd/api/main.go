@@ -27,7 +27,7 @@ func main() {
 
 	// 2.1 Run Seeders
 	brokerRepo := repositories.NewBrokerRepository(database.Pool)
-	seederService := services.NewSeederService(brokerRepo)
+	seederService := services.NewSeederService(brokerRepo, nil)
 	if err := seederService.SeedBrokersData(context.Background()); err != nil {
 		logrus.Errorf("Failed to run brokers seeder: %v", err)
 	}
