@@ -3,6 +3,7 @@ package usecases
 import (
 	"context"
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/KAnggara75/IDXStocks/internal/models"
@@ -43,8 +44,8 @@ func (u *brokerUsecase) SyncBrokerActivity(ctx context.Context, token string, pa
 			StockCode:  item.StockCode,
 			Date:       t,
 			Side:       side,
-			Lot:        item.Lot,
-			Value:      item.Value,
+			Lot:        int64(math.Round(item.Lot)),
+			Value:      int64(math.Round(item.Value)),
 			AvgPrice:   item.AvgPrice,
 			Freq:       item.Freq,
 		}

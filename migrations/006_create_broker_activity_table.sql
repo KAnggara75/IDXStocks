@@ -9,9 +9,9 @@ CREATE TABLE IF NOT EXISTS idxstock.broker_activity (
     freq BIGINT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (broker_code, stock_code, date, side)
+    PRIMARY KEY (broker_code, date, stock_code, side)
 );
 
 -- Indeks kombinasi untuk mempercepat pencarian (sering dipakai):
 CREATE INDEX IF NOT EXISTS idx_broker_act_bd ON idxstock.broker_activity (broker_code, date);
-CREATE INDEX IF NOT EXISTS idx_broker_act_bsd ON idxstock.broker_activity (broker_code, stock_code, date);
+CREATE INDEX IF NOT EXISTS idx_broker_act_bsd ON idxstock.broker_activity (broker_code, date, stock_code);

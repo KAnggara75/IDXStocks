@@ -17,8 +17,8 @@ type ExodusBrokerActivityItem struct {
 	StockCode  string  `json:"stock_code"`
 	BrokerCode string  `json:"broker_code"`
 	Date       string  `json:"date"`
-	Value      int64   `json:"value"`
-	Lot        int64   `json:"lot"`
+	Value      float64 `json:"value"`
+	Lot        float64 `json:"lot"`
 	AvgPrice   float64 `json:"avg_price"`
 	Freq       int64   `json:"freq"`
 }
