@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"os"
 	"time"
 
@@ -10,7 +11,9 @@ import (
 
 	"github.com/KAnggara75/IDXStocks/internal/config"
 	"github.com/KAnggara75/IDXStocks/internal/database"
+	"github.com/KAnggara75/IDXStocks/internal/repositories"
 	"github.com/KAnggara75/IDXStocks/internal/routes"
+	"github.com/KAnggara75/IDXStocks/internal/services"
 )
 
 func main() {
@@ -21,6 +24,13 @@ func main() {
 	// For local testing, you might need to export DATABASE_URL
 	// e.g., export DATABASE_URL=postgres://user:pass@localhost:5432/dbname
 	database.Connect()
+
+	// 2.1 Run Seeders
+	brokerRepo := repositories.NewBrokerRepository(database.Pool)
+	seederService := services.NewSeederService(brokerRepo)
+	if err := seederService.SeedBrokersData(context.Background()); err != nil {
+		logrus.Errorf("Failed to run brokers seeder: %v", err)
+	}
 
 	// 3. Initialize Fiber App
 	app := fiber.New(fiber.Config{
