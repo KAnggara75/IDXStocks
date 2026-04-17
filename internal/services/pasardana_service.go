@@ -1,8 +1,10 @@
 package services
 
 import (
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -79,11 +81,25 @@ func (s *pasardanaService) FetchStockHistory(year, month, day int) ([]models.Pas
 }
 
 func (s *pasardanaService) fetch(url string, target any) error {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// Set required headers per user request
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Accept-Encoding", "gzip")
+	req.Header.Set("Host", "www.pasardana.id")
+	req.Header.Set("Pragma", "no-cache")
+	req.Header.Set("Referer", "https://pasardana.id/stock/search")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0")
+
 	client := &http.Client{
 		Timeout: 30 * time.Second,
 	}
+
 	// #nosec G107
-	resp, err := client.Get(url)
+	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to fetch from pasardana API: %w", err)
 	}
@@ -93,7 +109,17 @@ func (s *pasardanaService) fetch(url string, target any) error {
 		return fmt.Errorf("pasardana API returned status: %d", resp.StatusCode)
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(target); err != nil {
+	var body io.ReadCloser = resp.Body
+	if resp.Header.Get("Content-Encoding") == "gzip" {
+		gz, err := gzip.NewReader(resp.Body)
+		if err != nil {
+			return fmt.Errorf("failed to create gzip reader: %w", err)
+		}
+		defer gz.Close()
+		body = gz
+	}
+
+	if err := json.NewDecoder(body).Decode(target); err != nil {
 		return fmt.Errorf("failed to decode response: %w", err)
 	}
 
