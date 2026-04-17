@@ -2,7 +2,7 @@ package usecases
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"math"
 	"time"
 
@@ -67,11 +67,16 @@ func (u *brokerUsecase) SyncBrokerActivity(ctx context.Context, token string, pa
 		records = append(records, mapItem(item, "sell"))
 	}
 
-	if len(records) > 0 {
-		if err := u.repo.BatchUpsertBrokerActivity(ctx, records); err != nil {
-			logrus.Errorf("Failed to upsert broker activity: %v", err)
-			return nil, fmt.Errorf("failed to save broker activity to database: %w", err)
+	var errs []error
+	for _, rec := range records {
+		if err := u.repo.UpsertBrokerActivity(ctx, rec); err != nil {
+			logrus.Errorf("Error upserting record: %v", err)
+			errs = append(errs, err)
 		}
+	}
+
+	if len(errs) > 0 {
+		return records, errors.Join(errs...)
 	}
 
 	return records, nil

@@ -12,6 +12,7 @@ import (
 
 type BrokerActivityRepository interface {
 	BatchUpsertBrokerActivity(ctx context.Context, records []models.BrokerActivity) error
+	UpsertBrokerActivity(ctx context.Context, record models.BrokerActivity) error
 }
 
 type brokerActivityRepository struct {
@@ -82,5 +83,36 @@ func (r *brokerActivityRepository) BatchUpsertBrokerActivity(ctx context.Context
 	}
 
 	logrus.Infof("Successfully upserted %d broker activity records (affected: %d)", len(records), affected)
+	return nil
+}
+
+func (r *brokerActivityRepository) UpsertBrokerActivity(ctx context.Context, rec models.BrokerActivity) error {
+	query := `
+		INSERT INTO idxstock.broker_activity (
+			broker_code, stock_code, date, side, lot, value, avg_price, freq, updated_at
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now())
+		ON CONFLICT (broker_code, stock_code, date, side) DO UPDATE SET
+			lot = EXCLUDED.lot,
+			value = EXCLUDED.value,
+			avg_price = EXCLUDED.avg_price,
+			freq = EXCLUDED.freq,
+			updated_at = now()
+		WHERE
+			idxstock.broker_activity.lot IS DISTINCT FROM EXCLUDED.lot OR
+			idxstock.broker_activity.value IS DISTINCT FROM EXCLUDED.value OR
+			idxstock.broker_activity.avg_price IS DISTINCT FROM EXCLUDED.avg_price OR
+			idxstock.broker_activity.freq IS DISTINCT FROM EXCLUDED.freq
+	`
+
+	_, err := r.pool.Exec(ctx, query,
+		rec.BrokerCode, rec.StockCode, rec.Date, rec.Side,
+		rec.Lot, rec.Value, rec.AvgPrice, rec.Freq,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to upsert broker activity (%s, %s, %s, %s): %w",
+			rec.BrokerCode, rec.StockCode, rec.Date.Format("2006-01-02"), rec.Side, err)
+	}
+
 	return nil
 }
