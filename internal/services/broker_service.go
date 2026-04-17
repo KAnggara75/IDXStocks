@@ -72,7 +72,7 @@ func (s *brokerService) FetchBrokerActivity(ctx context.Context, token string, p
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Exodus API returned status: %d", resp.StatusCode)
+		return nil, fmt.Errorf("exodus API returned status: %d", resp.StatusCode)
 	}
 
 	var exodusResp models.ExodusBrokerActivityResponse
