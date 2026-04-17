@@ -12,7 +12,6 @@ import (
 
 type StockRepository interface {
 	BatchInsertStocks(ctx context.Context, stocks []models.Stock) error
-	UpdateStockIDs(ctx context.Context, data []models.PasardanaStock) ([]models.StockResponse, error)
 	UpsertStocksDetail(ctx context.Context, data []models.PasardanaStockDetail) ([]models.StockResponse, error)
 	UpdateDelistingDate(ctx context.Context, code, delistingDate string) (*models.StockResponse, error)
 	FindMissingCodes(ctx context.Context, codes []string) ([]string, error)
@@ -89,61 +88,6 @@ func (r *stockRepository) BatchInsertStocks(ctx context.Context, stocks []models
 	logrus.Debugf("Successfully processed %d stocks, %d records updated/inserted", len(stocks), changedCount)
 
 	return nil
-}
-
-func (r *stockRepository) UpdateStockIDs(ctx context.Context, data []models.PasardanaStock) ([]models.StockResponse, error) {
-	if len(data) == 0 {
-		return make([]models.StockResponse, 0), nil
-	}
-
-	tx, err := r.pool.Begin(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to begin transaction: %w", err)
-	}
-	defer tx.Rollback(ctx)
-
-	query := `
-		UPDATE idxstock.stocks
-		SET id = $1, last_modified = now()
-		WHERE code = $2 AND (id IS NULL OR id != $1)
-		RETURNING id, code, name
-	`
-
-	batch := &pgx.Batch{}
-	for _, s := range data {
-		batch.Queue(query, s.Id, s.Code)
-	}
-
-	br := tx.SendBatch(ctx, batch)
-	defer br.Close()
-
-	updatedStocks := make([]models.StockResponse, 0)
-	for i := range data {
-		rows, err := br.Query()
-		if err != nil {
-			return nil, fmt.Errorf("failed to execute batch query %d: %w", i, err)
-		}
-
-		for rows.Next() {
-			var sr models.StockResponse
-			if err := rows.Scan(&sr.Id, &sr.Code, &sr.Name); err == nil {
-				updatedStocks = append(updatedStocks, sr)
-			}
-		}
-		rows.Close()
-	}
-
-	if err := br.Close(); err != nil {
-		return nil, fmt.Errorf("failed to close batch result: %w", err)
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return nil, fmt.Errorf("failed to commit transaction: %w", err)
-	}
-
-	logrus.Debugf("Successfully updated %d stock IDs", len(updatedStocks))
-
-	return updatedStocks, nil
 }
 
 func (r *stockRepository) UpdateDelistingDate(ctx context.Context, code, delistingDate string) (*models.StockResponse, error) {

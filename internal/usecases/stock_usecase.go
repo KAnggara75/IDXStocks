@@ -16,7 +16,6 @@ import (
 type StockUsecase interface {
 	PreviewStocks(ctx context.Context, file io.Reader) ([]models.Stock, error)
 	UploadStocks(ctx context.Context, file io.Reader) ([]models.Stock, error)
-	SyncStockIDs(ctx context.Context) ([]models.StockResponse, error)
 	SyncStockDetail(ctx context.Context) ([]models.StockResponse, error)
 	SyncDelistingStocks(ctx context.Context, year, month int) ([]models.StockResponse, error)
 }
@@ -58,15 +57,6 @@ func (u *stockUsecase) UploadStocks(ctx context.Context, file io.Reader) ([]mode
 	}
 
 	return stocks, nil
-}
-
-func (u *stockUsecase) SyncStockIDs(ctx context.Context) ([]models.StockResponse, error) {
-	pasardanaStocks, err := u.pasardanaService.FetchStockIDs()
-	if err != nil {
-		return nil, err
-	}
-
-	return u.repo.UpdateStockIDs(ctx, pasardanaStocks)
 }
 
 func (u *stockUsecase) SyncStockDetail(ctx context.Context) ([]models.StockResponse, error) {

@@ -52,7 +52,6 @@ func Setup(app *fiber.App) {
 	v1 := app.Group("/api/v1")
 	v1.Post("/stocks/upload", stockHandler.PreviewHandler)
 	v1.Patch("/stocks/upload", stockHandler.UploadHandler)
-	v1.Put("/stocks/id", stockHandler.SyncIDHandler)
 	v1.Put("/stocks/sync", stockHandler.SyncStockDetailHandler)
 	v1.Put("/stocks/delisting/sync", stockHandler.SyncDelistingStocksHandler)
 	v1.Put("/stocks/history/sync", historyHandler.SyncStockHistoryHandler)

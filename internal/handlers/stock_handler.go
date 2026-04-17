@@ -84,18 +84,6 @@ func (h *StockHandler) getFileAndValidate(c fiber.Ctx) (multipart.File, error) {
 	return f, nil
 }
 
-func (h *StockHandler) SyncIDHandler(c fiber.Ctx) error {
-	stocks, err := h.usecase.SyncStockIDs(c.Context())
-	if err != nil {
-		logrus.Errorf("Failed to sync stock IDs: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error(),
-		})
-	}
-
-	return c.JSON(stocks)
-}
-
 func (h *StockHandler) SyncStockDetailHandler(c fiber.Ctx) error {
 	// Run synchronization in background
 	go func(ctx context.Context) {

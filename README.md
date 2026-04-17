@@ -47,7 +47,6 @@ jelaskan tahpan-tahapan yangg harus dilakukan untuk implementasikan fitur ini, a
 ### Stocks Management
 - `POST /api/v1/stocks/upload` : Preview parsed JSON from a stock file upload.
 - `PATCH /api/v1/stocks/upload` : Process and save uploaded stock JSON file.
-- `PUT /api/v1/stocks/id` : Sync external internal IDs of stocks from Pasardana.
 - `PUT /api/v1/stocks/sync` : Sync detailed company profiles and statistics for all active stocks.
 - `PUT /api/v1/stocks/delisting/sync` : Fetch and sync delisted stocks from Pasardana.
 - `PUT /api/v1/stocks/history/sync` : Download and sync EOD historical price data for stocks.
