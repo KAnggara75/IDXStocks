@@ -5,6 +5,24 @@ on:
     branches: ["main"]
 
 jobs:
+  changes:
+    runs-on: ubuntu-24.04
+    outputs:
+      src: ${{ steps.filter.outputs.src }}
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: dorny/paths-filter@v3.0.2
+        id: filter
+        with:
+          filters: |
+            src:
+              - '**.go'
+              - 'go.mod'
+              - 'go.sum'
+              - 'Dockerfile'
+              - 'migrations/**'
+              - '.github/workflows/pipeline.yaml'
+
   security_scan:
     name: Go Security Scan
     runs-on: ubuntu-24.04
@@ -34,8 +52,8 @@ jobs:
 
   docker_build_push:
     name: Build and Push Docker Image
-    needs: security_scan
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [security_scan, changes]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.changes.outputs.src == 'true'
     runs-on: ubuntu-24.04
     permissions:
       contents: read
