@@ -14,7 +14,7 @@ RUN go mod download
 COPY . .
 
 # Build the application as a static binary
-RUN CGO_ENABLED=0 GOOS=linux go build -o /app/idxstocks ./cmd/api/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app/idxstock ./cmd/api/main.go
 
 # Final stage
 FROM alpine:latest
@@ -26,7 +26,7 @@ RUN apk --no-cache add ca-certificates tzdata
 WORKDIR /root/
 
 # Copy the binary from the builder stage
-COPY --from=builder /app/idxstocks .
+COPY --from=builder /app/idxstock .
 
 # Copy migrations folder
 COPY --from=builder /app/migrations ./migrations
@@ -39,4 +39,4 @@ ENV PORT=3000
 ENV TZ=Asia/Jakarta
 
 # Run the binary
-CMD ["./idxstocks"]
+CMD ["./idxstock"]

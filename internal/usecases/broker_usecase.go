@@ -9,9 +9,9 @@ import (
 
 	"strings"
 
-	"github.com/KAnggara75/IDXStocks/internal/models"
-	"github.com/KAnggara75/IDXStocks/internal/repositories"
-	"github.com/KAnggara75/IDXStocks/internal/services"
+	"github.com/KAnggara75/IDXStock/internal/models"
+	"github.com/KAnggara75/IDXStock/internal/repositories"
+	"github.com/KAnggara75/IDXStock/internal/services"
 	"github.com/sirupsen/logrus"
 )
 

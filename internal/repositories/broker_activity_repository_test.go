@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/KAnggara75/IDXStocks/internal/models"
+	"github.com/KAnggara75/IDXStock/internal/models"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
 )

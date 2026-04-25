@@ -9,11 +9,11 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/recover"
 	"github.com/sirupsen/logrus"
 
-	"github.com/KAnggara75/IDXStocks/internal/config"
-	"github.com/KAnggara75/IDXStocks/internal/database"
-	"github.com/KAnggara75/IDXStocks/internal/repositories"
-	"github.com/KAnggara75/IDXStocks/internal/routes"
-	"github.com/KAnggara75/IDXStocks/internal/services"
+	"github.com/KAnggara75/IDXStock/internal/config"
+	"github.com/KAnggara75/IDXStock/internal/database"
+	"github.com/KAnggara75/IDXStock/internal/repositories"
+	"github.com/KAnggara75/IDXStock/internal/routes"
+	"github.com/KAnggara75/IDXStock/internal/services"
 )
 
 func main() {
@@ -34,7 +34,7 @@ func main() {
 
 	// 3. Initialize Fiber App
 	app := fiber.New(fiber.Config{
-		AppName: "IDXStocks API",
+		AppName: "IDXStock API",
 	})
 
 	// 4. Middlewares

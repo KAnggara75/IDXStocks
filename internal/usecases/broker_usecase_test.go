@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/KAnggara75/IDXStocks/internal/models"
+	"github.com/KAnggara75/IDXStock/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

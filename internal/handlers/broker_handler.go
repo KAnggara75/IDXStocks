@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"github.com/KAnggara75/IDXStocks/internal/models"
-	"github.com/KAnggara75/IDXStocks/internal/usecases"
+	"github.com/KAnggara75/IDXStock/internal/models"
+	"github.com/KAnggara75/IDXStock/internal/usecases"
 	"github.com/gofiber/fiber/v3"
 	"github.com/sirupsen/logrus"
 )

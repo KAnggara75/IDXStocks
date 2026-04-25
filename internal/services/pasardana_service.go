@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/KAnggara75/IDXStocks/internal/models"
+	"github.com/KAnggara75/IDXStock/internal/models"
 )
 
 type PasardanaService interface {

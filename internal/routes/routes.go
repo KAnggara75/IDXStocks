@@ -1,11 +1,11 @@
 package routes
 
 import (
-	"github.com/KAnggara75/IDXStocks/internal/database"
-	"github.com/KAnggara75/IDXStocks/internal/handlers"
-	"github.com/KAnggara75/IDXStocks/internal/repositories"
-	"github.com/KAnggara75/IDXStocks/internal/services"
-	"github.com/KAnggara75/IDXStocks/internal/usecases"
+	"github.com/KAnggara75/IDXStock/internal/database"
+	"github.com/KAnggara75/IDXStock/internal/handlers"
+	"github.com/KAnggara75/IDXStock/internal/repositories"
+	"github.com/KAnggara75/IDXStock/internal/services"
+	"github.com/KAnggara75/IDXStock/internal/usecases"
 	"github.com/gofiber/fiber/v3"
 )
 

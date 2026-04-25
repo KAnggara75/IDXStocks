@@ -1,4 +1,4 @@
-# IDXStocks
+# IDXStock
 
 A robust Go application to fetch and manage Indonesian stock market data.
 

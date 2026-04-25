@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/KAnggara75/IDXStocks/internal/models"
+	"github.com/KAnggara75/IDXStock/internal/models"
 	"github.com/sirupsen/logrus"
 )
 

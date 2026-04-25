@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/KAnggara75/IDXStocks/internal/models"
-	"github.com/KAnggara75/IDXStocks/internal/utils"
+	"github.com/KAnggara75/IDXStock/internal/models"
+	"github.com/KAnggara75/IDXStock/internal/utils"
 	"github.com/xuri/excelize/v2"
 )
 
