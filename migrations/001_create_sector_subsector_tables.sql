@@ -18,6 +18,3 @@ CREATE TABLE IF NOT EXISTS idxstock.sub_sector
     sector_id      INT            NOT NULL REFERENCES idxstock.sector(id),
     last_modified  TIMESTAMPTZ    NOT NULL DEFAULT now()
 );
-
-ALTER TABLE idxstock.sector OWNER TO pakaiwa_app;
-ALTER TABLE idxstock.sub_sector OWNER TO pakaiwa_app;
