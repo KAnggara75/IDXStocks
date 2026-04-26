@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sirupsen/logrus"
@@ -19,24 +20,32 @@ func getDsn() string {
 	if dsn == "" {
 		logrus.Fatal("DSN environment variable is not set")
 	}
+	logrus.Debug("DSN environment variable is set")
 	return dsn
 }
 
 func Connect() {
+	logrus.Debug("Connecting to the database")
 	config, err := pgxpool.ParseConfig(getDsn())
 	if err != nil {
 		logrus.Fatalf("Unable to parse DSN: %v", err)
 	}
+	logrus.Debugf("Connecting to database at %s:%d", config.ConnConfig.Host, config.ConnConfig.Port)
 
 	Pool, err = pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {
 		logrus.Fatalf("Unable to create connection pool: %v", err)
 	}
+	logrus.Debug("Connection pool created")
 
-	err = Pool.Ping(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err = Pool.Ping(ctx)
 	if err != nil {
 		logrus.Fatalf("Unable to ping database: %v", err)
 	}
+	logrus.Debug("Database pinged successfully")
 
 	fmt.Println("Successfully connected to the database")
 
@@ -45,7 +54,8 @@ func Connect() {
 }
 
 func Migrate() {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
 	// 1. Ensure schema exists
 	_, err := Pool.Exec(ctx, "CREATE SCHEMA IF NOT EXISTS idxstock")
