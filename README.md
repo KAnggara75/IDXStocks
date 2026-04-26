@@ -14,7 +14,7 @@ This application leverages data from the following reliable sources:
 - **Dynamic Filtering**: Support for `fields` selection, `start_date`, and `end_date`.
 - **Delisting Data**: Track delisted stocks.
 - **Containerized**: Ready for deployment with Docker/Podman.
-- **Code Coverage**: 7.3% (Target: 75%)
+- **Code Coverage**: 7.2% (Target: 75%)
 
 ## 🛠 Tech Stack
 
