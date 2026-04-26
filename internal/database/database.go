@@ -9,19 +9,23 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
 var Pool *pgxpool.Pool
 
-func Connect() {
-	dsn := os.Getenv("DATABASE_URL")
+func getDsn() string {
+	dsn := viper.GetString("db.idxstock.dsn")
 	if dsn == "" {
-		logrus.Fatal("DATABASE_URL environment variable is not set")
+		logrus.Fatal("DSN environment variable is not set")
 	}
+	return dsn
+}
 
-	config, err := pgxpool.ParseConfig(dsn)
+func Connect() {
+	config, err := pgxpool.ParseConfig(getDsn())
 	if err != nil {
-		logrus.Fatalf("Unable to parse DATABASE_URL: %v", err)
+		logrus.Fatalf("Unable to parse DSN: %v", err)
 	}
 
 	Pool, err = pgxpool.NewWithConfig(context.Background(), config)

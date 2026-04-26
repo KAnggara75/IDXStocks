@@ -14,7 +14,12 @@ import (
 	"github.com/KAnggara75/IDXStock/internal/repositories"
 	"github.com/KAnggara75/IDXStock/internal/routes"
 	"github.com/KAnggara75/IDXStock/internal/services"
+	"github.com/KAnggara75/scc2go"
 )
+
+func init() {
+	scc2go.GetEnv(os.Getenv("SCC_URL"), os.Getenv("SCC_AUTH"))
+}
 
 func main() {
 	// 1. Initialize Logger
