@@ -47,6 +47,7 @@ func (h *HistoryHandler) SyncStockHistoryHandler(c fiber.Ctx) error {
 	}
 
 	// Run sync in background
+	// #nosec G118
 	go func() {
 		// Use a background context as the request context will be cancelled
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
