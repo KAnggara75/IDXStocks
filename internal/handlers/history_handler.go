@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/csv"
 	"fmt"
 	"strings"
@@ -45,16 +46,22 @@ func (h *HistoryHandler) SyncStockHistoryHandler(c fiber.Ctx) error {
 		})
 	}
 
-	err := h.usecase.SyncStockHistory(c.Context(), req, source)
-	if err != nil {
-		logrus.Errorf("Failed to sync stock history for %02d/%02d/%04d from %s: %v", req.Month, req.Day, req.Year, source, err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error(),
-		})
-	}
+	// Run sync in background
+	go func() {
+		// Use a background context as the request context will be cancelled
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+		defer cancel()
 
-	return c.JSON(fiber.Map{
-		"message": "Stock history synchronization completed successfully",
+		err := h.usecase.SyncStockHistory(ctx, req, source)
+		if err != nil {
+			logrus.Errorf("Background stock history sync failed for %02d/%02d/%04d from %s: %v", req.Month, req.Day, req.Year, source, err)
+			return
+		}
+		logrus.Infof("Background stock history sync completed for %02d/%02d/%04d from %s", req.Month, req.Day, req.Year, source)
+	}()
+
+	return c.Status(fiber.StatusAccepted).JSON(fiber.Map{
+		"message": "Stock history synchronization started in the background",
 		"date":    req,
 		"source":  source,
 	})

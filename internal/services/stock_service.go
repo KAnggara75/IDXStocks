@@ -51,7 +51,7 @@ func (s *stockService) ParseExcel(file io.Reader) ([]models.Stock, error) {
 			Code:         row[1],
 			CompanyName:  row[2],
 			ListingDate:  &listingDate,
-			ListingBoard: row[5],
+			ListingBoard: utils.MapBoard(row[5]),
 			Shares:       shares,
 		}
 		stocks = append(stocks, stock)

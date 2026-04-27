@@ -123,7 +123,7 @@ func (r *historyRepository) BatchUpsertStockHistory(ctx context.Context, records
 	defer br.Close()
 
 	var affected int64
-	for i := 0; i < len(records); i++ {
+	for i := range records {
 		ct, err := br.Exec()
 		if err != nil {
 			// If it fails because of foreign key constraint, we might want to log it and continue
