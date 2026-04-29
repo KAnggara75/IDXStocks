@@ -46,6 +46,17 @@ func (h *HistoryHandler) SyncStockHistoryHandler(c fiber.Ctx) error {
 		})
 	}
 
+	// Constraint: Pasardana source is not allowed for dates after 2019-07-28
+	if source == "pasardana" {
+		reqDate := time.Date(req.Year, time.Month(req.Month), req.Day, 0, 0, 0, 0, time.UTC)
+		threshold := time.Date(2019, 7, 28, 0, 0, 0, 0, time.UTC)
+		if reqDate.After(threshold) {
+			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
+				"error": "Sync from Pasardana is restricted for dates after 2019-07-28",
+			})
+		}
+	}
+
 	// Run sync in background
 	// #nosec G118
 	go func() {

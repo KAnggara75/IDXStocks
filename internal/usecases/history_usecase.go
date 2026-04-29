@@ -41,7 +41,14 @@ func NewHistoryUsecase(
 
 func (u *historyUsecase) SyncStockHistory(ctx context.Context, req models.SyncHistoryRequest, source string) error {
 	var records []models.StockHistory
-	targetDate := time.Date(req.Year, time.Month(req.Month), req.Day, 0, 0, 0, 0, time.Local)
+	targetDate := time.Date(req.Year, time.Month(req.Month), req.Day, 0, 0, 0, 0, time.UTC)
+
+	if source == "pasardana" {
+		threshold := time.Date(2019, 7, 28, 0, 0, 0, 0, time.UTC)
+		if targetDate.After(threshold) {
+			return fmt.Errorf("sync from pasardana is restricted for dates after 2019-07-28")
+		}
+	}
 
 	switch source {
 	case "pasardana":

@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS idxstock.history (
     CONSTRAINT fk_history_stock_code FOREIGN KEY (code) REFERENCES idxstock.stocks (code) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_history_code_like ON idxstock.history (code text_pattern_ops);
-CREATE INDEX IF NOT EXISTS idx_history_code_fk ON idxstock.history (code);
 CREATE INDEX IF NOT EXISTS idx_history_date ON idxstock.history (date);
+CREATE INDEX IF NOT EXISTS idx_history_date_desc ON idxstock.history (date DESC);
+CREATE INDEX IF NOT EXISTS idx_history_covering ON idxstock.history (code, date DESC) INCLUDE (close, volume);
+CLUSTER idxstock.history USING history_pkey;

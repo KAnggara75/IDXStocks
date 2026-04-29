@@ -38,7 +38,7 @@ func (r *historyRepository) BatchUpsertStockHistory(ctx context.Context, records
 	defer tx.Rollback(ctx)
 
 	query := `
-		INSERT INTO idxstock.history (
+		INSERT INTO idxstock.history AS h (
 			code, date, previous, open_price, first_trade, high, low, close, change,
 			volume, value, frequency, index_individual, offer, offer_volume,
 			bid, bid_volume, listed_shares, tradeble_shares, weight_for_index,
@@ -50,56 +50,56 @@ func (r *historyRepository) BatchUpsertStockHistory(ctx context.Context, records
 			$16, $17, $18, $19, $20, $21, $22, $23::DATE, $24, $25, $26, now()
 		)
 		ON CONFLICT (code, date) DO UPDATE SET
-			previous = EXCLUDED.previous,
-			open_price = EXCLUDED.open_price,
-			first_trade = EXCLUDED.first_trade,
-			high = EXCLUDED.high,
-			low = EXCLUDED.low,
-			close = EXCLUDED.close,
-			change = EXCLUDED.change,
-			volume = EXCLUDED.volume,
-			value = EXCLUDED.value,
-			frequency = EXCLUDED.frequency,
-			index_individual = EXCLUDED.index_individual,
-			offer = EXCLUDED.offer,
-			offer_volume = EXCLUDED.offer_volume,
-			bid = EXCLUDED.bid,
-			bid_volume = EXCLUDED.bid_volume,
-			listed_shares = EXCLUDED.listed_shares,
-			tradeble_shares = EXCLUDED.tradeble_shares,
-			weight_for_index = EXCLUDED.weight_for_index,
-			foreign_sell = EXCLUDED.foreign_sell,
-			foreign_buy = EXCLUDED.foreign_buy,
-			delisting_date = EXCLUDED.delisting_date,
-			non_regular_volume = EXCLUDED.non_regular_volume,
-			non_regular_value = EXCLUDED.non_regular_value,
-			non_regular_frequency = EXCLUDED.non_regular_frequency,
+			previous = COALESCE(EXCLUDED.previous, h.previous),
+			open_price = COALESCE(EXCLUDED.open_price, h.open_price),
+			first_trade = COALESCE(EXCLUDED.first_trade, h.first_trade),
+			high = COALESCE(EXCLUDED.high, h.high),
+			low = COALESCE(EXCLUDED.low, h.low),
+			close = COALESCE(EXCLUDED.close, h.close),
+			change = COALESCE(EXCLUDED.change, h.change),
+			volume = COALESCE(EXCLUDED.volume, h.volume),
+			value = COALESCE(EXCLUDED.value, h.value),
+			frequency = COALESCE(EXCLUDED.frequency, h.frequency),
+			index_individual = COALESCE(EXCLUDED.index_individual, h.index_individual),
+			offer = COALESCE(EXCLUDED.offer, h.offer),
+			offer_volume = COALESCE(EXCLUDED.offer_volume, h.offer_volume),
+			bid = COALESCE(EXCLUDED.bid, h.bid),
+			bid_volume = COALESCE(EXCLUDED.bid_volume, h.bid_volume),
+			listed_shares = COALESCE(EXCLUDED.listed_shares, h.listed_shares),
+			tradeble_shares = COALESCE(EXCLUDED.tradeble_shares, h.tradeble_shares),
+			weight_for_index = COALESCE(EXCLUDED.weight_for_index, h.weight_for_index),
+			foreign_sell = COALESCE(EXCLUDED.foreign_sell, h.foreign_sell),
+			foreign_buy = COALESCE(EXCLUDED.foreign_buy, h.foreign_buy),
+			delisting_date = COALESCE(EXCLUDED.delisting_date, h.delisting_date),
+			non_regular_volume = COALESCE(EXCLUDED.non_regular_volume, h.non_regular_volume),
+			non_regular_value = COALESCE(EXCLUDED.non_regular_value, h.non_regular_value),
+			non_regular_frequency = COALESCE(EXCLUDED.non_regular_frequency, h.non_regular_frequency),
 			last_modified = now()
 		WHERE
-			history.previous IS DISTINCT FROM EXCLUDED.previous OR
-			history.open_price IS DISTINCT FROM EXCLUDED.open_price OR
-			history.first_trade IS DISTINCT FROM EXCLUDED.first_trade OR
-			history.high IS DISTINCT FROM EXCLUDED.high OR
-			history.low IS DISTINCT FROM EXCLUDED.low OR
-			history.close IS DISTINCT FROM EXCLUDED.close OR
-			history.change IS DISTINCT FROM EXCLUDED.change OR
-			history.volume IS DISTINCT FROM EXCLUDED.volume OR
-			history.value IS DISTINCT FROM EXCLUDED.value OR
-			history.frequency IS DISTINCT FROM EXCLUDED.frequency OR
-			history.index_individual IS DISTINCT FROM EXCLUDED.index_individual OR
-			history.offer IS DISTINCT FROM EXCLUDED.offer OR
-			history.offer_volume IS DISTINCT FROM EXCLUDED.offer_volume OR
-			history.bid IS DISTINCT FROM EXCLUDED.bid OR
-			history.bid_volume IS DISTINCT FROM EXCLUDED.bid_volume OR
-			history.listed_shares IS DISTINCT FROM EXCLUDED.listed_shares OR
-			history.tradeble_shares IS DISTINCT FROM EXCLUDED.tradeble_shares OR
-			history.weight_for_index IS DISTINCT FROM EXCLUDED.weight_for_index OR
-			history.foreign_sell IS DISTINCT FROM EXCLUDED.foreign_sell OR
-			history.foreign_buy IS DISTINCT FROM EXCLUDED.foreign_buy OR
-			history.delisting_date IS DISTINCT FROM EXCLUDED.delisting_date OR
-			history.non_regular_volume IS DISTINCT FROM EXCLUDED.non_regular_volume OR
-			history.non_regular_value IS DISTINCT FROM EXCLUDED.non_regular_value OR
-			history.non_regular_frequency IS DISTINCT FROM EXCLUDED.non_regular_frequency
+			(EXCLUDED.previous IS NOT NULL AND h.previous IS DISTINCT FROM EXCLUDED.previous) OR
+			(EXCLUDED.open_price IS NOT NULL AND h.open_price IS DISTINCT FROM EXCLUDED.open_price) OR
+			(EXCLUDED.first_trade IS NOT NULL AND h.first_trade IS DISTINCT FROM EXCLUDED.first_trade) OR
+			(EXCLUDED.high IS NOT NULL AND h.high IS DISTINCT FROM EXCLUDED.high) OR
+			(EXCLUDED.low IS NOT NULL AND h.low IS DISTINCT FROM EXCLUDED.low) OR
+			(EXCLUDED.close IS NOT NULL AND h.close IS DISTINCT FROM EXCLUDED.close) OR
+			(EXCLUDED.change IS NOT NULL AND h.change IS DISTINCT FROM EXCLUDED.change) OR
+			(EXCLUDED.volume IS NOT NULL AND h.volume IS DISTINCT FROM EXCLUDED.volume) OR
+			(EXCLUDED.value IS NOT NULL AND h.value IS DISTINCT FROM EXCLUDED.value) OR
+			(EXCLUDED.frequency IS NOT NULL AND h.frequency IS DISTINCT FROM EXCLUDED.frequency) OR
+			(EXCLUDED.index_individual IS NOT NULL AND h.index_individual IS DISTINCT FROM EXCLUDED.index_individual) OR
+			(EXCLUDED.offer IS NOT NULL AND h.offer IS DISTINCT FROM EXCLUDED.offer) OR
+			(EXCLUDED.offer_volume IS NOT NULL AND h.offer_volume IS DISTINCT FROM EXCLUDED.offer_volume) OR
+			(EXCLUDED.bid IS NOT NULL AND h.bid IS DISTINCT FROM EXCLUDED.bid) OR
+			(EXCLUDED.bid_volume IS NOT NULL AND h.bid_volume IS DISTINCT FROM EXCLUDED.bid_volume) OR
+			(EXCLUDED.listed_shares IS NOT NULL AND h.listed_shares IS DISTINCT FROM EXCLUDED.listed_shares) OR
+			(EXCLUDED.tradeble_shares IS NOT NULL AND h.tradeble_shares IS DISTINCT FROM EXCLUDED.tradeble_shares) OR
+			(EXCLUDED.weight_for_index IS NOT NULL AND h.weight_for_index IS DISTINCT FROM EXCLUDED.weight_for_index) OR
+			(EXCLUDED.foreign_sell IS NOT NULL AND h.foreign_sell IS DISTINCT FROM EXCLUDED.foreign_sell) OR
+			(EXCLUDED.foreign_buy IS NOT NULL AND h.foreign_buy IS DISTINCT FROM EXCLUDED.foreign_buy) OR
+			(EXCLUDED.delisting_date IS NOT NULL AND h.delisting_date IS DISTINCT FROM EXCLUDED.delisting_date) OR
+			(EXCLUDED.non_regular_volume IS NOT NULL AND h.non_regular_volume IS DISTINCT FROM EXCLUDED.non_regular_volume) OR
+			(EXCLUDED.non_regular_value IS NOT NULL AND h.non_regular_value IS DISTINCT FROM EXCLUDED.non_regular_value) OR
+			(EXCLUDED.non_regular_frequency IS NOT NULL AND h.non_regular_frequency IS DISTINCT FROM EXCLUDED.non_regular_frequency)
 	`
 
 	batch := &pgx.Batch{}
