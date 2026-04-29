@@ -2,7 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: ["main"]
+    branches: [ "main" ]
 
 jobs:
   changes:
@@ -84,7 +84,7 @@ jobs:
 
   docker_build_push:
     name: Build and Push Docker Image
-    needs: [security_scan, unit_test, changes]
+    needs: [ security_scan, unit_test, changes ]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.changes.outputs.src == 'true'
     runs-on: ubuntu-24.04
     permissions:
@@ -99,3 +99,4 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+          tag_strategy: run_number
