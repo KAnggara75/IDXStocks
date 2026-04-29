@@ -94,7 +94,7 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v6.0.2
-      - uses: KAnggara/DevOps/dockerbuild@v0.1.7
+      - uses: KAnggara/DevOps/dockerbuild@v0.1.11
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
